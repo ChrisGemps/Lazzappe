@@ -9,7 +9,7 @@ export const Logotext = () => (
       alt="LAZZAPPEE Logo" // Alt text for accessibility
       style={{
         maxWidth: "100%",   // Ensure the image is responsive
-        height: "60px",     // Maintain aspect ratio
+        height: "auto",     // Maintain aspect ratio
       }}
     />
   </div>
@@ -96,17 +96,39 @@ export const BrandSide = () => (
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      background: "linear-gradient(to bottom, #ffffff, #e6f0ff)",
+      background:
+        "linear-gradient(-45deg, #dfefff, #b7d3ff, #e3f1ff, #a5c7ff, #c9ddff, #f0f7ff)",
+      backgroundSize: "600% 600%",
+      animation: "blueFlow 6s ease infinite",
     }}
   >
-    <h1
+    <style>
+      {`
+        @keyframes blueFlow {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}
+    </style>
+
+    <img
+      src="/logo.png"
+      alt="LAZZAPPEE Logo"
       style={{
-        fontSize: "5rem",
-        fontFamily: "serif",
-        fontWeight: "lighter",
+        maxWidth: "40%",
+        height: "auto",
+        filter: "drop-shadow(0 3px 10px rgba(0,0,0,0.25))",
+        transition: "transform 0.3s ease",
       }}
-    >
-      brand side dri dapita wahahah
-    </h1>
+      onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
+    />
   </div>
 );
