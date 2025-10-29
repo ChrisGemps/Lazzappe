@@ -35,6 +35,7 @@ export default function NavBar(){
                         flex: 1
                         }}
                     />
+                    test
                 </div>
 
             </div>
