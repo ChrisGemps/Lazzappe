@@ -1,7 +1,13 @@
 import React from "react";
-import { Logotext, Input, Button, SocialButton, BrandSide } from "./components";
+import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
+import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
+  const navigate = useNavigate();  // hook inside component
+
+  const signinClick = () => {
+    navigate("/dashboard");
+  };
   return (
     <div style={{ width: "100%", maxWidth: "300px" }}>
       <link href="https://fonts.googleapis.com/css2?family=Brown+Sugar&display=swap" rel="stylesheet"></link>
@@ -10,7 +16,7 @@ const LoginForm = () => {
       <Input type="email" placeholder="sampldasjbdse@email.com" />
       <Input type="password" placeholder="Password" />
 
-      <Button text="Sign in" background="#2734ebff"/>
+      <Button text="Sign in" background="#2734ebff" onClick={signinClick}/>
 
 <div style={{ margin: "10px 0", textAlign: "center", color: "#2d2d2dff" }}>
   <hr style={{ border: "0.5px solid #ffffffff" }} />
