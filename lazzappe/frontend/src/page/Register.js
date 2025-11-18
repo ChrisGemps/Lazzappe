@@ -1,21 +1,75 @@
 import React, { useState } from "react";
-import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components"; // adjust import path
+import axios from "axios";
+import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
 
 export default function Register() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    fullName: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
 
+  const [error, setError] = useState("");
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setError(""); // Clear error when user types
   };
 
-  const handleRegister = () => {
-    alert(`Welcome ${form.fullName || "User"}! Your account has been created.`);
+ const handleRegister = async () => {
+  setError("");
+
+  if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword) {
+    setError("Please fill in all fields");
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(form.email)) {
+    setError("Please enter a valid email address");
+    return;
+  }
+
+  if (form.password.length < 6) {
+    setError("Password must be at least 6 characters long");
+    return;
+  }
+
+  if (form.password !== form.confirmPassword) {
+    setError("Passwords do not match!");
+    return;
+  }
+
+  try {
+    console.log("Sending request to backend:", form); // Debug log
+
+    const response = await axios.post("http://localhost:8080/api/auth/register", {
+      username: form.username,
+      email: form.email,
+      password: form.password,
+    });
+
+    console.log("Backend response:", response.data); // Debug log
+
+    alert("Registration Successful! Please login.");
+    navigate("/login");
+  } catch (error) {
+    console.error("Axios full error:", error); // Debug log
+    console.error("Axios response:", error.response); // Debug log
+
+    const errorMessage = error.response?.data?.error || error.message || "Registration failed.";
+    setError(errorMessage);
+  }
+};
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleRegister();
+    }
   };
 
   return (
@@ -26,7 +80,7 @@ export default function Register() {
         fontFamily: "Poppins, sans-serif",
       }}
     >
-      {/* ---------- LEFT SIDE: Register Form ---------- */}
+      {/* LEFT SIDE */}
       <div
         style={{
           flex: 3,
@@ -52,38 +106,61 @@ export default function Register() {
             Create your account
           </h2>
 
+          {error && (
+            <div
+              style={{
+                backgroundColor: "#fee",
+                color: "#c33",
+                padding: "10px",
+                borderRadius: "5px",
+                marginBottom: "15px",
+                textAlign: "center",
+                fontSize: "14px",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
           <Input
             type="text"
-            placeholder="Full Name"
-            name="fullName"
-            value={form.fullName}
+            placeholder="Username"
+            name="username"
+            value={form.username}
             onChange={handleChange}
+            onKeyPress={handleKeyPress}
           />
+
           <Input
             type="email"
             placeholder="Email Address"
             name="email"
             value={form.email}
             onChange={handleChange}
+            onKeyPress={handleKeyPress}
           />
+
           <Input
             type="password"
             placeholder="Password"
             name="password"
             value={form.password}
             onChange={handleChange}
+            onKeyPress={handleKeyPress}
           />
+
           <Input
             type="password"
             placeholder="Confirm Password"
             name="confirmPassword"
             value={form.confirmPassword}
             onChange={handleChange}
+            onKeyPress={handleKeyPress}
           />
 
           <Button text="Register" background="#3b6dcf" onClick={handleRegister} />
 
-          {/* ---------- OR Divider ---------- */}
+          {/* OR Divider */}
           <div
             style={{
               display: "flex",
@@ -96,36 +173,34 @@ export default function Register() {
             <div style={{ flex: 1, height: "1px", background: "#ccc" }}></div>
           </div>
 
-          {/* ---------- Social Buttons ---------- */}
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <SocialButton
-                    text="Google"
-                    icon="https://cdn-teams-slug.flaticon.com/google.jpg"
-                  />
-                  <SocialButton
-                    text="Facebook"
-                    icon="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png"
-                  />
-                </div>
+            <SocialButton
+              text="Google"
+              icon="https://cdn-teams-slug.flaticon.com/google.jpg"
+            />
+            <SocialButton
+              text="Facebook"
+              icon="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png"
+            />
+          </div>
 
-          {/* ---------- Footer Link ---------- */}
           <p style={{ textAlign: "center", marginTop: "20px", color: "#666" }}>
-            {" "}
             <Link
-                to="/login"
-                style={{
+              to="/login"
+              style={{
                 color: "#2734ebff",
                 fontWeight: "verylight",
                 textDecoration: "none",
                 cursor: "pointer",
-                }}>
-                Already have an account?
+              }}
+            >
+              Already have an account? Login
             </Link>
           </p>
         </div>
       </div>
 
-      {/* ---------- RIGHT SIDE: Dynamic Blue Flow Background ---------- */}
+      {/* RIGHT SIDE */}
       <BrandSide />
     </div>
   );

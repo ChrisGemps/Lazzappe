@@ -1,8 +1,8 @@
 package com.lazzappe.lazzappe.service;
 
-
 import com.lazzappe.lazzappe.entity.User;
 import com.lazzappe.lazzappe.repository.UserRepository;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -11,9 +11,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     public User registerUser(User user) throws Exception {
@@ -28,9 +30,26 @@ public class UserService {
             throw new Exception("Email already registered");
         }
 
-        // TODO: You should hash the password before saving (e.g., BCrypt)
-        // For simplicity, saving plain text password (NOT recommended in production)
+        // Hash the password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         return userRepository.save(user);
+    }
+
+    public User loginUser(String username, String password) throws Exception {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        
+        if (userOptional.isEmpty()) {
+            throw new Exception("Invalid username or password");
+        }
+
+        User user = userOptional.get();
+        
+        // Check if password matches
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new Exception("Invalid username or password");
+        }
+
+        return user;
     }
 }

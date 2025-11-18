@@ -17,17 +17,21 @@ export const Logotext = () => (
 
 
 // ---------------- Input ----------------
-export const Input = ({ type, placeholder }) => (
+export const Input = ({ type, placeholder, name, value, onChange, onKeyPress }) => (
   <input
     type={type}
     placeholder={placeholder}
+    name={name}
+    value={value}
+    onChange={onChange}
+    onKeyPress={onKeyPress}
     style={{
-      display: "block",
       width: "100%",
-      padding: "10px",
-      marginBottom: "12px",
+      padding: "12px",
+      margin: "8px 0",
+      borderRadius: "5px",
       border: "1px solid #ccc",
-      borderRadius: "4px",
+      fontSize: "14px"
     }}
   />
 );
