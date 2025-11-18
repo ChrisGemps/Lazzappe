@@ -1,12 +1,57 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
 import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
 
 const LoginForm = () => {
-  const navigate = useNavigate(); // hook inside component
+  const navigate = useNavigate();
 
-  const signinClick = () => {
-    navigate("/dashboard");
+  const [form, setForm] = useState({
+    username: "",
+    password: "",
+  });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError(""); // Clear error when user types
+  };
+
+  const signinClick = async () => {
+    // Validate inputs
+    if (!form.username || !form.password) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post("http://localhost:8080/api/auth/login", {
+        username: form.username,
+        password: form.password,
+      });
+
+      // Store user info in localStorage
+      localStorage.setItem("user", JSON.stringify(response.data));
+      
+      alert("Login Successful!");
+      navigate("/dashboard");
+    } catch (error) {
+      const errorMessage = error.response?.data?.error || "Login failed. Please try again.";
+      setError(errorMessage);
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      signinClick();
+    }
   };
 
   return (
@@ -18,10 +63,44 @@ const LoginForm = () => {
 
       <Logotext />
 
-      <Input type="email" placeholder="user@email.com" />
-      <Input type="password" placeholder="Password" />
+      {error && (
+        <div
+          style={{
+            backgroundColor: "#fee",
+            color: "#c33",
+            padding: "10px",
+            borderRadius: "5px",
+            marginBottom: "15px",
+            fontSize: "14px",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
-      <Button text="Sign in" background="#2734ebff" onClick={signinClick} />
+      <Input
+        type="text"
+        placeholder="Username"
+        name="username"
+        value={form.username}
+        onChange={handleChange}
+        onKeyPress={handleKeyPress}
+      />
+      <Input
+        type="password"
+        placeholder="Password"
+        name="password"
+        value={form.password}
+        onChange={handleChange}
+        onKeyPress={handleKeyPress}
+      />
+
+      <Button
+        text={loading ? "Signing in..." : "Sign in"}
+        background="#2734ebff"
+        onClick={signinClick}
+        disabled={loading}
+      />
 
       <div style={{ margin: "10px 0", textAlign: "center", color: "#2d2d2dff" }}>
         <hr style={{ border: "0.5px solid #ffffffff" }} />
@@ -47,9 +126,8 @@ const LoginForm = () => {
         />
       </div>
 
-      {/* 🔗 Register Link */}
       <p style={{ marginTop: "25px", color: "#2d2d2dff" }}>
-        Don’t have an account?{" "}
+        Don't have an account?{" "}
         <Link
           to="/register"
           style={{
