@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
+import { CartProvider, useCart } from '../context/CartContext';
+import Cart from '../component/Cart';
+import ProductModal from '../component/ProductModal';
 
 export default function Dashboard() {
   const categories = [
@@ -14,24 +17,58 @@ export default function Dashboard() {
     { 
       id: 1, 
       name: 'Leather Jackets', 
-      image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop'
+      image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop',
+      price: 129.99
     },
     { 
       id: 2, 
       name: 'Aesthetic Hats', 
-      image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=400&fit=crop'
+      image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=400&fit=crop',
+      price: 29.99
     },
     { 
       id: 3, 
       name: 'Designed Caps', 
-      image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop'
+      image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop',
+      price: 24.99
     },
     { 
       id: 4, 
       name: 'Winter Jackets', 
-      image: 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400&h=400&fit=crop'
+      image: 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400&h=400&fit=crop',
+      price: 149.99
     }
   ];
+
+  return (
+    <CartProvider>
+    <DashboardInner products={products} categories={categories} />
+    <Cart />
+    </CartProvider>
+  );
+}
+
+function DashboardInner({ products, categories }) {
+  const [search, setSearch] = useState('');
+  const [username, setUsername] = useState('Guest');
+  const { addToCart, itemCount, setOpen } = useCart();
+  const [activeProduct, setActiveProduct] = useState(null);
+
+  useEffect(() => {
+    // try localStorage first (set by login/register flow)
+    const stored = localStorage.getItem('username') || localStorage.getItem('user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.username) setUsername(parsed.username);
+        else setUsername(stored);
+      } catch (e) {
+        setUsername(stored);
+      }
+    }
+  }, []);
+
+  const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="dashboard">
@@ -51,7 +88,12 @@ export default function Dashboard() {
           <span className="nav-link">🔔 Notification</span>
           <div className="user-info">
             <div className="user-avatar"></div>
-            <span>iShowSpeed</span>
+            <span>{username}</span>
+          </div>
+          <div style={{display:'flex', alignItems:'center', gap:8, marginLeft:12}}>
+            <button onClick={() => setOpen(true)} className="navbar-cart-btn">
+              🛒 Cart ({itemCount})
+            </button>
           </div>
         </div>
       </nav>
@@ -60,7 +102,7 @@ export default function Dashboard() {
       <div className="search-container">
         <div className="search-box">
           <span className="search-icon">🔍</span>
-          <input type="text" placeholder="Search" className="search-input" />
+          <input value={search} onChange={(e)=>setSearch(e.target.value)} type="text" placeholder="Search products, brands, styles..." className="search-input" />
         </div>
       </div>
 
@@ -87,7 +129,7 @@ export default function Dashboard() {
         <div className="content">
           <div className="products-container">
             <div className="products-grid">
-              {products.map((product) => (
+              {filtered.map((product) => (
                 <div key={product.id} className="product-card">
                   <div className="product-image-wrapper">
                     <img 
@@ -97,11 +139,22 @@ export default function Dashboard() {
                     />
                   </div>
                   <div className="product-footer">
-                    <span className="product-name">{product.name}</span>
-                    <div className="product-add">+</div>
+                    <div className="product-card-content">
+                      <div className="product-info" onClick={() => setActiveProduct(product)}>
+                        <div className="product-name">{product.name}</div>
+                        <div className="product-price">${product.price?.toFixed(2)}</div>
+                      </div>
+                      <div className="product-actions">
+                        <button className="btn btn-secondary" onClick={() => addToCart(product)}>Add</button>
+                        <button className="btn btn-primary" onClick={() => { addToCart(product); setOpen(true); }}>Buy</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
+
+              {/* product modal */}
+              <ProductModal product={activeProduct} onClose={() => setActiveProduct(null)} onAdd={(p) => addToCart(p)} />
             </div>
 
             {/* Large Product Showcase */}

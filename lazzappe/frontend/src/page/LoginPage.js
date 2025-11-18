@@ -36,6 +36,10 @@ const LoginForm = () => {
 
       // Store user info in localStorage
       localStorage.setItem("user", JSON.stringify(response.data));
+      // also store a username shortcut for simpler lookup in dashboard
+      try {
+        localStorage.setItem('username', response.data.username || response.data.user?.username || '');
+      } catch (e) {}
       
       alert("Login Successful!");
       navigate("/dashboard");

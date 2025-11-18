@@ -55,8 +55,16 @@ export default function Register() {
 
     console.log("Backend response:", response.data); // Debug log
 
-    alert("Registration Successful! Please login.");
-    navigate("/login");
+    // Persist user info so dashboard can show the username immediately
+    try {
+      localStorage.setItem('user', JSON.stringify(response.data));
+      localStorage.setItem('username', response.data.username || form.username);
+    } catch (e) {
+      // ignore
+    }
+
+    alert("Registration Successful! You are now logged in.");
+    navigate("/dashboard");
   } catch (error) {
     console.error("Axios full error:", error); // Debug log
     console.error("Axios response:", error.response); // Debug log
