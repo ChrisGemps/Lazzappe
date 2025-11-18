@@ -27,7 +27,7 @@ public class UserController {
             
             // Don't send password back to client
             Map<String, Object> response = new HashMap<>();
-            response.put("id", registeredUser.getId());
+            response.put("id", registeredUser.getUser_id());
             response.put("username", registeredUser.getUsername());
             response.put("email", registeredUser.getEmail());
             response.put("message", "Registration successful");
@@ -51,7 +51,7 @@ public class UserController {
             
             // Don't send password back to client
             Map<String, Object> response = new HashMap<>();
-            response.put("id", user.getId());
+            response.put("id", user.getUser_id());
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
             response.put("message", "Login successful");
