@@ -30,6 +30,11 @@ public class UserService {
             throw new Exception("Email already registered");
         }
 
+        // Set default role if not provided
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("CUSTOMER");
+        }
+
         // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
