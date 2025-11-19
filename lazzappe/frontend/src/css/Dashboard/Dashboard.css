@@ -1,0 +1,184 @@
+/* Navbar Container */
+.navbar {
+  width: 100%;
+  align-items: center;
+  background-color: #3392ff;
+}
+
+/* Top Header */
+.navbar-top {
+  background-color: #3392ff;
+  color: white;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  border-bottom: 1px solid #3374ff85;
+}
+
+.navbar-top-left,
+.navbar-top-right {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.nav-link:hover {
+  opacity: 0.8;
+}
+
+/* Main Header */
+.centerItems {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.navbar-main {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  width: 800px;
+}
+
+/* Logo */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logo-box {
+  background-color: white;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-letter {
+  color: #3392ff;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.logo-text {
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+/* Search Bar */
+.navbar-search-container {
+  flex: 1;
+  margin: 0 32px;
+}
+
+.search-bar {
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-button {
+  background-color: #3358ff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.search-button:hover {
+  background-color: #3381ff;
+}
+
+/* Cart */
+.navbar-cart {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.navbar-cart:hover {
+  opacity: 0.8;
+}
+
+/* Category Navigation */
+.navbar-categories {
+  justify-content: center;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  display: flex;
+  gap: 32px;
+  overflow-x: auto;
+  font-size: 14px;
+}
+
+.category-link {
+  color: #666;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.category-link:hover {
+  color: #ff6633;
+}
+
+/* Scrollbar styling for category nav */
+.navbar-categories::-webkit-scrollbar {
+  height: 4px;
+}
+
+.navbar-categories::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.navbar-categories::-webkit-scrollbar-thumb {
+  background: #3392ff;
+  border-radius: 2px;
+}
+
+.navbar-categories::-webkit-scrollbar-thumb:hover {
+  background: #3381ff;
+}
+
+
