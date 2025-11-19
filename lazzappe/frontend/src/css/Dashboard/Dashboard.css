@@ -2,19 +2,19 @@
 .navbar {
   width: 100%;
   align-items: center;
-  background-color: #3392ff;
+  background-color: #e8eef7;
 }
 
 /* Top Header */
 .navbar-top {
-  background-color: #3392ff;
-  color: white;
+  background-color: #e8eef7;
+  color: #2d3e75;
   padding: 8px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 13px;
-  border-bottom: 1px solid #3374ff85;
+  border-bottom: 1px solid #d0d9e8;
   width: 1300px;
 }
 
@@ -26,7 +26,7 @@
 }
 
 .nav-link {
-  color: white !important;
+  color: #2d3e75 !important;
   text-decoration: none;
   cursor: pointer;
   transition: opacity 0.2s ease;
@@ -60,6 +60,11 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.navbar-logo img {
+  max-height: 45px;
+  width: auto;
 }
 
 .logo-box {

@@ -3,9 +3,23 @@ import React, { useState } from "react";
 
 // ---------------- Logo ----------------
 export const Logotext = () => (
+  <div style={{ textAlign: "center", marginBottom: "0px" }}>
+    <img
+      src="/Lazzappee_logohd.png"  // Path to your logo PNG file in the public folder
+      alt="LAZZAPPEE Logo" // Alt text for accessibility
+      style={{
+        maxWidth: "100%",   // Ensure the image is responsive
+        height: "auto",     // Maintain aspect ratio
+      }}
+    />
+  </div>
+);
+
+// ---------------- Logo for Login/Register ----------------
+export const LogotextLogin = () => (
   <div style={{ textAlign: "center", marginBottom: "20px" }}>
     <img
-      src="/logotext.png"  // Path to your PNG file in the public folder
+      src="/Lazzappee_logohd2.png"  // Path to your login logo PNG file in the public folder
       alt="LAZZAPPEE Logo" // Alt text for accessibility
       style={{
         maxWidth: "100%",   // Ensure the image is responsive
