@@ -5,6 +5,8 @@ import Cart from '../component/Cart';
 import ProductModal from '../component/ProductModal';
 import { Logotext } from '../component/components';
 
+
+
 export default function Dashboard() {
   const categories = [
     { name: 'Trending' },

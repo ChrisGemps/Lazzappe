@@ -1,0 +1,136 @@
+.error-message {
+    background-color: "#fee";
+    color: "#c33";
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+}
+
+
+.divider-container {
+  margin: 10px 0;
+  text-align: center;
+  color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.divider-line {
+  border: none;
+  border-top: 0.5px solid #ffffff;
+  flex: 1;
+}
+
+.divider-text {
+  position: relative;
+  padding: 0 10px;
+  background: transparent;
+}
+
+.social-buttons-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.signup-prompt {
+  margin-top: 25px;
+  color: #2d2d2d;
+}
+
+.signup-link {
+  color: #2734eb;
+  font-weight: 300;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}
+
+/* Login Page Layout */
+.login-page-wrapper {
+  display: flex;
+  height: 100vh;
+  background-color: #ffecec;
+}
+
+.login-page-left {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to bottom, #cce7ff, #f9f9f9);
+}
+
+/* Login Form Container */
+.login-form-wrapper {
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+/* Divider Section */
+.divider-container {
+  margin: 10px 0;
+  text-align: center;
+  color: #2d2d2d;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.divider-line {
+  border: none;
+  border-top: 0.5px solid #ffffff;
+  flex: 1;
+}
+
+.divider-text {
+  position: relative;
+  padding: 0 10px;
+  background: transparent;
+}
+
+/* Social Buttons */
+.social-buttons-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Signup Prompt */
+.signup-prompt {
+  margin-top: 25px;
+  color: #2d2d2d;
+}
+
+.signup-link {
+  color: #2734eb;
+  font-weight: 300;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
+}

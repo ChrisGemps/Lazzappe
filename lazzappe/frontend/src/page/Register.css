@@ -1,0 +1,84 @@
+/* Register Page Layout */
+.register-page-wrapper {
+  display: flex;
+  height: 100vh;
+  font-family: "Poppins, sans-serif";
+}
+
+.register-page-left {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 60px;
+  background-color: #ffffff;
+}
+
+/* Register Form Container */
+.register-form-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Register Title */
+.register-title {
+  text-align: center;
+  color: #3b6dcf;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Divider Section */
+.divider-container {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  gap: 10px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: #ccc;
+}
+
+.divider-text {
+  color: #888;
+}
+
+/* Social Buttons */
+.social-buttons-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Login Prompt */
+.login-prompt {
+  text-align: center;
+  margin-top: 20px;
+  color: #666;
+}
+
+.login-link {
+  color: #2734eb;
+  font-weight: 300;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}

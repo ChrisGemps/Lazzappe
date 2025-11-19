@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
+import './Register.css';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -17,62 +17,80 @@ export default function Register() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError(""); // Clear error when user types
+    setError("");
   };
 
- const handleRegister = async () => {
-  setError("");
-
-  if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword) {
-    setError("Please fill in all fields");
-    return;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(form.email)) {
-    setError("Please enter a valid email address");
-    return;
-  }
-
-  if (form.password.length < 6) {
-    setError("Password must be at least 6 characters long");
-    return;
-  }
-
-  if (form.password !== form.confirmPassword) {
-    setError("Passwords do not match!");
-    return;
-  }
-
-  try {
-    console.log("Sending request to backend:", form); // Debug log
-
-    const response = await axios.post("http://localhost:8080/api/auth/register", {
-      username: form.username,
-      email: form.email,
-      password: form.password,
-    });
-
-    console.log("Backend response:", response.data); // Debug log
-
-    // Persist user info so dashboard can show the username immediately
-    try {
-      localStorage.setItem('user', JSON.stringify(response.data));
-      localStorage.setItem('username', response.data.username || form.username);
-    } catch (e) {
-      // ignore
+  const validateForm = () => {
+    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword) {
+      setError("Please fill in all fields");
+      return false;
     }
 
-    alert("Registration Successful! You are now logged in.");
-    navigate("/dashboard");
-  } catch (error) {
-    console.error("Axios full error:", error); // Debug log
-    console.error("Axios response:", error.response); // Debug log
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setError("Please enter a valid email address");
+      return false;
+    }
 
-    const errorMessage = error.response?.data?.error || error.message || "Registration failed.";
-    setError(errorMessage);
-  }
-};
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return false;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match!");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleRegister = async () => {
+    setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    try {
+      console.log("Sending request to backend:", form);
+
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: form.username,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Registration failed.");
+      }
+
+      const data = await response.json();
+
+      console.log("Backend response:", data);
+
+      try {
+        localStorage.setItem('user', JSON.stringify(data));
+        localStorage.setItem('username', data.username || form.username);
+      } catch (e) {
+        // ignore
+      }
+
+      alert("Registration Successful! You are now logged in.");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Fetch error:", error);
+      const errorMessage = error.message || "Registration failed.";
+      setError(errorMessage);
+    }
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -81,51 +99,15 @@ export default function Register() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        fontFamily: "Poppins, sans-serif",
-      }}
-    >
-      {/* LEFT SIDE */}
-      <div
-        style={{
-          flex: 3,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "0 60px",
-          backgroundColor: "#ffffff",
-        }}
-      >
-        <div style={{ width: "100%", maxWidth: "400px" }}>
+    <div className="register-page-wrapper">
+      <div className="register-page-left">
+        <div className="register-form-container">
           <Logotext />
 
-          <h2
-            style={{
-              textAlign: "center",
-              color: "#3b6dcf",
-              marginBottom: "25px",
-              fontWeight: "600",
-            }}
-          >
-            Create your account
-          </h2>
+          <h2 className="register-title">Create your account</h2>
 
           {error && (
-            <div
-              style={{
-                backgroundColor: "#fee",
-                color: "#c33",
-                padding: "10px",
-                borderRadius: "5px",
-                marginBottom: "15px",
-                textAlign: "center",
-                fontSize: "14px",
-              }}
-            >
+            <div className="error-message">
               {error}
             </div>
           )}
@@ -168,20 +150,13 @@ export default function Register() {
 
           <Button text="Register" background="#3b6dcf" onClick={handleRegister} />
 
-          {/* OR Divider */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              margin: "20px 0",
-            }}
-          >
-            <div style={{ flex: 1, height: "1px", background: "#ccc" }}></div>
-            <span style={{ margin: "0 10px", color: "#888" }}>OR</span>
-            <div style={{ flex: 1, height: "1px", background: "#ccc" }}></div>
+          <div className="divider-container">
+            <div className="divider-line"></div>
+            <span className="divider-text">OR</span>
+            <div className="divider-line"></div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <div className="social-buttons-container">
             <SocialButton
               text="Google"
               icon="https://cdn-teams-slug.flaticon.com/google.jpg"
@@ -192,23 +167,14 @@ export default function Register() {
             />
           </div>
 
-          <p style={{ textAlign: "center", marginTop: "20px", color: "#666" }}>
-            <Link
-              to="/login"
-              style={{
-                color: "#2734ebff",
-                fontWeight: "verylight",
-                textDecoration: "none",
-                cursor: "pointer",
-              }}
-            >
+          <p className="login-prompt">
+            <Link to="/login" className="login-link">
               Already have an account? Login
             </Link>
           </p>
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
       <BrandSide />
     </div>
   );
