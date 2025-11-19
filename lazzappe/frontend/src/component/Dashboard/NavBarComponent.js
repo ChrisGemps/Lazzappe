@@ -7,18 +7,20 @@ export default function Dashboard() {
     <>
       <nav className="navbar">
         {/* Top Header */}
-        <div className="navbar-top">
-          <div className="navbar-top-left">
-            <a href="#" className="nav-link">Seller Centre</a>
-            <a href="#" className="nav-link">Sell on Lazzappe</a>
-            <a href="#" className="nav-link">Download</a>
-            <span>Follow us on</span>
-          </div>
-          <div className="navbar-top-right">
-            <Bell size={16} />
-            <HelpCircle size={16} />
-            <a href="#" className="nav-link">Sign Up</a>
-            <a href="#" className="nav-link">Login</a>
+        <div className="centerItems">
+          <div className="navbar-top">
+            <div className="navbar-top-left">
+              <a href="#" className="nav-link">Seller Centre</a>
+              <a href="#" className="nav-link">Sell on Lazzappe</a>
+              <a href="#" className="nav-link">Download</a>
+              <span>Follow us on</span>
+            </div>
+            <div className="navbar-top-right">
+              <Bell size={16} />
+              <HelpCircle size={16} />
+              <a href="#" className="nav-link">Sign Up</a>
+              <a href="#" className="nav-link">Login</a>
+            </div>
           </div>
         </div>
 
