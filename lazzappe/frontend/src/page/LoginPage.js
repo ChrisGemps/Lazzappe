@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
+import './LoginPage.css';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -16,11 +16,10 @@ const LoginForm = () => {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError(""); // Clear error when user types
+    setError("");
   };
 
   const signinClick = async () => {
-    // Validate inputs
     if (!form.username || !form.password) {
       setError("Please fill in all fields");
       return;
@@ -29,22 +28,33 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/login", {
-        username: form.username,
-        password: form.password,
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: form.username,
+          password: form.password,
+        }),
       });
 
-      // Store user info in localStorage
-      localStorage.setItem("user", JSON.stringify(response.data));
-      // also store a username shortcut for simpler lookup in dashboard
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Login failed. Please try again.");
+      }
+
+      const data = await response.json();
+
+      localStorage.setItem("user", JSON.stringify(data));
       try {
-        localStorage.setItem('username', response.data.username || response.data.user?.username || '');
+        localStorage.setItem('username', data.username || data.user?.username || '');
       } catch (e) {}
       
       alert("Login Successful!");
       navigate("/dashboard");
     } catch (error) {
-      const errorMessage = error.response?.data?.error || "Login failed. Please try again.";
+      const errorMessage = error.message || "Login failed. Please try again.";
       setError(errorMessage);
       console.log(error);
     } finally {
@@ -59,25 +69,11 @@ const LoginForm = () => {
   };
 
   return (
-    <div style={{ width: "100%", maxWidth: "300px", textAlign: "center" }}>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Brown+Sugar&display=swap"
-        rel="stylesheet"
-      ></link>
-
+    <div className="login-form-wrapper">
       <Logotext />
-
+      
       {error && (
-        <div
-          style={{
-            backgroundColor: "#fee",
-            color: "#c33",
-            padding: "10px",
-            borderRadius: "5px",
-            marginBottom: "15px",
-            fontSize: "14px",
-          }}
-        >
+        <div className="error-message">
           {error}
         </div>
       )}
@@ -90,6 +86,7 @@ const LoginForm = () => {
         onChange={handleChange}
         onKeyPress={handleKeyPress}
       />
+      
       <Input
         type="password"
         placeholder="Password"
@@ -106,20 +103,12 @@ const LoginForm = () => {
         disabled={loading}
       />
 
-      <div style={{ margin: "10px 0", textAlign: "center", color: "#2d2d2dff" }}>
-        <hr style={{ border: "0.5px solid #ffffffff" }} />
-        <span
-          style={{
-            position: "relative",
-            padding: "0 10px",
-            background: "transparent",
-          }}
-        >
-          or Sign In with
-        </span>
+      <div className="divider-container">
+        <hr className="divider-line" />
+        <span className="divider-text">or Sign In with</span>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div className="social-buttons-container">
         <SocialButton
           text="Google"
           icon="https://cdn-teams-slug.flaticon.com/google.jpg"
@@ -130,17 +119,9 @@ const LoginForm = () => {
         />
       </div>
 
-      <p style={{ marginTop: "25px", color: "#2d2d2dff" }}>
+      <p className="signup-prompt">
         Don't have an account?{" "}
-        <Link
-          to="/register"
-          style={{
-            color: "#2734ebff",
-            fontWeight: "verylight",
-            textDecoration: "none",
-            cursor: "pointer",
-          }}
-        >
+        <Link to="/register" className="signup-link">
           Create one
         </Link>
       </p>
@@ -150,22 +131,8 @@ const LoginForm = () => {
 
 const LoginPage = () => {
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        background: "#ffecec",
-      }}
-    >
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          background: "linear-gradient(to bottom, #cce7ff, #f9f9f9)",
-        }}
-      >
+    <div className="login-page-wrapper">
+      <div className="login-page-left">
         <LoginForm />
       </div>
       <BrandSide />

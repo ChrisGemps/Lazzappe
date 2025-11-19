@@ -1,5 +1,4 @@
 import React from 'react';
-import axios from 'axios';
 import { useCart } from '../context/CartContext';
 
 export default function Cart() {
@@ -48,7 +47,16 @@ export default function Cart() {
               onClick={async () => {
                 try {
                   const payload = { items, username: localStorage.getItem('username') || null };
-                  await axios.post('http://localhost:8080/api/orders', payload);
+                  const response = await fetch('http://localhost:8080/api/orders', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                  });
+                  if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                  }
                   alert('Order placed successfully (backend confirmed)');
                   clearCart();
                   setOpen(false);
