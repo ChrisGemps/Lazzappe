@@ -37,7 +37,7 @@ export const Input = ({ type, placeholder, name, value, onChange, onKeyPress }) 
 );
 
 // ---------------- Button ----------------
-export const Button = ({ text, background = "#f17358", onClick }) => {
+export const Button = ({ text, background = "#2734ebff", onClick }) => {
   const [isClicked, setIsClicked] = useState(false);
 
   const handleClick = (e) => {

@@ -148,7 +148,7 @@ export default function Register() {
             onKeyPress={handleKeyPress}
           />
 
-          <Button text="Register" background="#3b6dcf" onClick={handleRegister} />
+          <Button text="Register" onClick={handleRegister} />
 
           <div className="divider-container">
             <div className="divider-line"></div>
@@ -168,8 +168,9 @@ export default function Register() {
           </div>
 
           <p className="login-prompt">
+            Already have an account?{" "}
             <Link to="/login" className="login-link">
-              Already have an account? Login
+               Login
             </Link>
           </p>
         </div>
