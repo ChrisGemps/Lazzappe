@@ -1,14 +1,62 @@
 import '../../css/Dashboard/Dashboard.css';
-import React from 'react';
-import { ShoppingCart, Bell, HelpCircle, User, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { ShoppingCart, Bell, HelpCircle, Search } from 'lucide-react';
 import { Logotext } from '../components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState('');
+  
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setIsLoggedIn(true);
+      setUsername(storedUsername);
+    }
+  }, []);
+
+  const location = useLocation();
+
+  useEffect(() => {
+    // update when route changes (e.g., after login navigation)
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      setIsLoggedIn(true);
+      setUsername(storedUsername);
+    } else {
+      setIsLoggedIn(false);
+      setUsername('');
+    }
+  }, [location]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const storedUsername = localStorage.getItem('username');
+      if (storedUsername) {
+        setIsLoggedIn(true);
+        setUsername(storedUsername);
+      } else {
+        setIsLoggedIn(false);
+        setUsername('');
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const handleLogoClick = () => {
     navigate('/dashboard');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('username');
+    setIsLoggedIn(false);
+    setUsername('');
+    navigate('/');
   };
 
   return (
@@ -25,8 +73,23 @@ export default function Dashboard() {
             <div className="navbar-top-right">
               <Bell size={16} />
               <HelpCircle size={16} />
-              <a href="#" className="nav-link">Sign Up</a>
-              <a href="#" className="nav-link">Login</a>
+              {isLoggedIn ? (
+                <>
+                  <span className="nav-link">Welcome, {username}</span>
+                  <button
+                    className="nav-link btn-logout"
+                    onClick={handleLogout}
+                    style={{ cursor: 'pointer', background: 'transparent', border: 'none' }}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/register" className="nav-link">Sign Up</Link>
+                  <Link to="/login" className="nav-link">Login</Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -55,7 +118,14 @@ export default function Dashboard() {
 
             {/* Cart */}
             <div className="navbar-cart">
-              <ShoppingCart size={24} />
+              <button
+                className="cart-icon-button"
+                onClick={() => navigate('/cart')}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                aria-label="Cart"
+              >
+                <ShoppingCart size={24} />
+              </button>
             </div>
           </div>
         </div>

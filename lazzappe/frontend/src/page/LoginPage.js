@@ -21,6 +21,7 @@ const LoginForm = () => {
   };
 
   const signinClick = async () => {
+    setError("");
     if (!form.username || !form.password) {
       setError("Please fill in all fields");
       return;
@@ -29,35 +30,60 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
+      const isEmail = form.username.includes('@');
+      const payload = isEmail
+        ? { email: form.username.trim(), password: form.password }
+        : { username: form.username.trim(), password: form.password };
+
+      console.debug('Login request payload:', payload);
+
       const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          username: form.username,
-          password: form.password,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Login failed. Please try again.");
+      // Try to parse JSON body when possible, but fall back to text
+      let data = null;
+      let textBody = null;
+      try {
+        data = await response.json();
+      } catch (e) {
+        try {
+          textBody = await response.text();
+        } catch (ee) {
+          // ignore
+        }
       }
 
-      const data = await response.json();
+      console.debug('Login response status:', response.status, 'jsonBody:', data, 'textBody:', textBody);
 
-      localStorage.setItem("user", JSON.stringify(data));
+      if (!response.ok) {
+        const errMsg = (data && (data.error || data.message)) || textBody || response.statusText || "Login failed";
+        throw new Error(errMsg);
+      }
+
+      // Derive username to store for UI; prefer returned username, otherwise use input
+      const derivedUsername =
+        (data && (data.username || data.user?.username || data.data?.username)) ||
+        (isEmail ? form.username.trim() : form.username.trim());
+
+      // Save user info and username
       try {
-        localStorage.setItem('username', data.username || data.user?.username || '');
-      } catch (e) {}
-      
-      alert("Login Successful!");
+        if (data) localStorage.setItem("user", JSON.stringify(data));
+        localStorage.setItem('username', derivedUsername || '');
+      } catch (e) {
+        console.warn('Unable to persist user to localStorage', e);
+      }
+
+      // Navigate to dashboard
       navigate("/dashboard");
     } catch (error) {
       const errorMessage = error.message || "Login failed. Please try again.";
       setError(errorMessage);
-      console.log(error);
+      console.error(error);
     } finally {
       setLoading(false);
     }

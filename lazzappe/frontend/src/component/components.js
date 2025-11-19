@@ -51,29 +51,31 @@ export const Input = ({ type, placeholder, name, value, onChange, onKeyPress }) 
 );
 
 // ---------------- Button ----------------
-export const Button = ({ text, background = "#2734ebff", onClick }) => {
+export const Button = ({ text, background = "#2734ebff", onClick, disabled = false }) => {
   const [isClicked, setIsClicked] = useState(false);
 
   const handleClick = (e) => {
+    if (disabled) return;
     setIsClicked(true);
-    setTimeout(() => setIsClicked(false), 200); 
+    setTimeout(() => setIsClicked(false), 200);
     if (onClick) onClick(e);
   };
 
   return (
     <button
       onClick={handleClick}
+      disabled={disabled}
       style={{
         marginLeft: "10px",
         width: "100%",
         padding: "10px",
-        background: background,
+        background: disabled ? "#9aa6ff" : background,
         color: "white",
         border: "none",
         borderRadius: "4px",
         marginTop: "60px",
         marginBottom: "15px",
-        cursor: "pointer",
+        cursor: disabled ? "not-allowed" : "pointer",
         fontWeight: "bold",
         transform: isClicked ? "scale(0.95)" : "scale(1)",
         transition: "transform 0.1s ease-in-out",

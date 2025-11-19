@@ -76,15 +76,9 @@ export default function Register() {
 
       console.log("Backend response:", data);
 
-      try {
-        localStorage.setItem('user', JSON.stringify(data));
-        localStorage.setItem('username', data.username || form.username);
-      } catch (e) {
-        // ignore
-      }
-
-      alert("Registration Successful! You are now logged in.");
-      navigate("/dashboard");
+      // After registering, redirect user to login page. Do not auto-login.
+      alert("Registration Successful! Please sign in with your new account.");
+      navigate("/login");
     } catch (error) {
       console.error("Fetch error:", error);
       const errorMessage = error.message || "Registration failed.";
