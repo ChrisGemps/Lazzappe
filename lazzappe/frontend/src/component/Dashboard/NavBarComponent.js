@@ -12,7 +12,6 @@ export default function Dashboard() {
             <div className="navbar-top-left">
               <a href="#" className="nav-link">Seller Centre</a>
               <a href="#" className="nav-link">Sell on Lazzappe</a>
-              <a href="#" className="nav-link">Download</a>
               <span>Follow us on</span>
             </div>
             <div className="navbar-top-right">
