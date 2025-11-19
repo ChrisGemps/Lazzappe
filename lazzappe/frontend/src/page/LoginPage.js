@@ -3,6 +3,7 @@ import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/c
 import { useNavigate, Link } from "react-router-dom";
 import './LoginPage.css';
 
+
 const LoginForm = () => {
   const navigate = useNavigate();
 
@@ -103,9 +104,10 @@ const LoginForm = () => {
         disabled={loading}
       />
 
-      <div className="divider-container">
-        <hr className="divider-line" />
-        <span className="divider-text">or Sign In with</span>
+      <div class="divider-container">
+        <div class="divider-line"></div>
+        <span class="divider-text">or Sign In with</span>
+        <div class="divider-line"></div>
       </div>
 
       <div className="social-buttons-container">
