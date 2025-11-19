@@ -3,6 +3,7 @@ import './Dashboard.css';
 import { CartProvider, useCart } from '../context/CartContext';
 import Cart from '../component/Cart';
 import ProductModal from '../component/ProductModal';
+import { Logotext } from '../component/components';
 
 export default function Dashboard() {
   const categories = [
@@ -18,13 +19,13 @@ export default function Dashboard() {
       id: 1, 
       name: 'Leather Jackets', 
       image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&h=400&fit=crop',
-      price: 129.99
+      price: 499.99
     },
     { 
       id: 2, 
       name: 'Aesthetic Hats', 
       image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?w=400&h=400&fit=crop',
-      price: 29.99
+      price: 49.99
     },
     { 
       id: 3, 
@@ -36,7 +37,7 @@ export default function Dashboard() {
       id: 4, 
       name: 'Winter Jackets', 
       image: 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400&h=400&fit=crop',
-      price: 149.99
+      price: 599.99
     }
   ];
 
@@ -76,8 +77,9 @@ function DashboardInner({ products, categories }) {
       <nav className="navbar">
         <div className="nav-left">
           <div className="logo-container">
-            <div className="logo-icon">🛍️</div>
-            <div className="logo-text">LAZZAPPE</div>
+            <div style={{ maxWidth: "170px", marginTop: "20px" }}>
+            <Logotext />
+            </div>
           </div>
         </div>
         
@@ -98,11 +100,11 @@ function DashboardInner({ products, categories }) {
         </div>
       </nav>
 
-      {/* Search Bar */}
-      <div className="search-container">
+      {/* Search Bar - Separated below navbar */}
+      <div className="search-container-below">
         <div className="search-box">
           <span className="search-icon">🔍</span>
-          <input value={search} onChange={(e)=>setSearch(e.target.value)} type="text" placeholder="Search products, brands, styles..." className="search-input" />
+          <input value={search} onChange={(e)=>setSearch(e.target.value)} type="text" placeholder="..." className="search-input" />
         </div>
       </div>
 
@@ -142,7 +144,7 @@ function DashboardInner({ products, categories }) {
                     <div className="product-card-content">
                       <div className="product-info" onClick={() => setActiveProduct(product)}>
                         <div className="product-name">{product.name}</div>
-                        <div className="product-price">${product.price?.toFixed(2)}</div>
+                        <div className="product-price">₱{product.price?.toFixed(2)}</div>
                       </div>
                       <div className="product-actions">
                         <button className="btn btn-secondary" onClick={() => addToCart(product)}>Add</button>
