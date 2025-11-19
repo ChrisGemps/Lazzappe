@@ -3,9 +3,8 @@ import './Dashboard.css';
 import { CartProvider, useCart } from '../context/CartContext';
 import Cart from '../component/Cart';
 import ProductModal from '../component/ProductModal';
+import ProductCard from '../component/ProductCard';
 import { Logotext } from '../component/components';
-
-
 
 export default function Dashboard() {
   const categories = [
@@ -45,8 +44,8 @@ export default function Dashboard() {
 
   return (
     <CartProvider>
-    <DashboardInner products={products} categories={categories} />
-    <Cart />
+      <DashboardInner products={products} categories={categories} />
+      <Cart />
     </CartProvider>
   );
 }
@@ -58,7 +57,6 @@ function DashboardInner({ products, categories }) {
   const [activeProduct, setActiveProduct] = useState(null);
 
   useEffect(() => {
-    // try localStorage first (set by login/register flow)
     const stored = localStorage.getItem('username') || localStorage.getItem('user');
     if (stored) {
       try {
@@ -73,15 +71,40 @@ function DashboardInner({ products, categories }) {
 
   const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
+  const handleViewDetails = (product) => {
+    setActiveProduct(product);
+  };
+
+  const handleAddToCart = (product) => {
+    addToCart(product);
+  };
+
+  const handleBuyNow = (product) => {
+    addToCart(product);
+    setOpen(true);
+  };
+
   return (
     <div className="dashboard">
       {/* Navigation Bar */}
       <nav className="navbar">
         <div className="nav-left">
           <div className="logo-container">
-            <div style={{ maxWidth: "170px", marginTop: "20px" }}>
-            <Logotext />
+            <div className="logo-wrapper">
+              <Logotext />
             </div>
+          </div>
+
+          {/* Search Bar in Navbar */}
+          <div className="search-box">
+            <span className="search-icon">🔍</span>
+            <input 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+              type="text" 
+              placeholder="Search products..." 
+              className="search-input" 
+            />
           </div>
         </div>
         
@@ -94,21 +117,11 @@ function DashboardInner({ products, categories }) {
             <div className="user-avatar"></div>
             <span>{username}</span>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:8, marginLeft:12}}>
-            <button onClick={() => setOpen(true)} className="navbar-cart-btn">
-              🛒 Cart ({itemCount})
-            </button>
-          </div>
+          <button onClick={() => setOpen(true)} className="navbar-cart-btn">
+            🛒 Cart ({itemCount})
+          </button>
         </div>
       </nav>
-
-      {/* Search Bar - Separated below navbar */}
-      <div className="search-container-below">
-        <div className="search-box">
-          <span className="search-icon">🔍</span>
-          <input value={search} onChange={(e)=>setSearch(e.target.value)} type="text" placeholder="..." className="search-input" />
-        </div>
-      </div>
 
       <div className="main-container">
         {/* Sidebar */}
@@ -134,31 +147,20 @@ function DashboardInner({ products, categories }) {
           <div className="products-container">
             <div className="products-grid">
               {filtered.map((product) => (
-                <div key={product.id} className="product-card">
-                  <div className="product-image-wrapper">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="product-image"
-                    />
-                  </div>
-                  <div className="product-footer">
-                    <div className="product-card-content">
-                      <div className="product-info" onClick={() => setActiveProduct(product)}>
-                        <div className="product-name">{product.name}</div>
-                        <div className="product-price">₱{product.price?.toFixed(2)}</div>
-                      </div>
-                      <div className="product-actions">
-                        <button className="btn btn-secondary" onClick={() => addToCart(product)}>Add</button>
-                        <button className="btn btn-primary" onClick={() => { addToCart(product); setOpen(true); }}>Buy</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onViewDetails={handleViewDetails}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                />
               ))}
 
-              {/* product modal */}
-              <ProductModal product={activeProduct} onClose={() => setActiveProduct(null)} onAdd={(p) => addToCart(p)} />
+              <ProductModal 
+                product={activeProduct} 
+                onClose={() => setActiveProduct(null)} 
+                onAdd={(p) => addToCart(p)} 
+              />
             </div>
 
             {/* Large Product Showcase */}
