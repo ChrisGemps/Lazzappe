@@ -1,8 +1,16 @@
 import '../../css/Dashboard/Dashboard.css';
 import React from 'react';
 import { ShoppingCart, Bell, HelpCircle, User, Search } from 'lucide-react';
+import { Logotext } from '../components';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <>
       <nav className="navbar">
@@ -27,11 +35,8 @@ export default function Dashboard() {
         <div className="centerItems">
           <div className="navbar-main">
             {/* Logo */}
-            <div className="navbar-logo">
-              <div className="logo-box">
-                <span className="logo-letter">L</span>
-              </div>
-              <span className="logo-text">Lazzappe</span>
+            <div className="navbar-logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
+              <Logotext />
             </div>
 
             {/* Search Bar */}
