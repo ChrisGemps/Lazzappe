@@ -2,7 +2,7 @@ import '../../css/Dashboard/Dashboard.css';
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ShoppingCart, Bell, HelpCircle, Search } from 'lucide-react';
-import { Logotext } from '../components';
+import { LogotextLogin } from '../components';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -99,7 +99,7 @@ export default function Dashboard() {
           <div className="navbar-main">
             {/* Logo */}
             <div className="navbar-logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
-              <Logotext />
+              <LogotextLogin />
             </div>
 
             {/* Search Bar */}
