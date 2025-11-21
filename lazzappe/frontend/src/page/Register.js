@@ -11,6 +11,7 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    shippingAddress: "",
   });
 
   const [error, setError] = useState("");
@@ -138,6 +139,15 @@ export default function Register() {
             placeholder="Confirm Password"
             name="confirmPassword"
             value={form.confirmPassword}
+            onChange={handleChange}
+            onKeyPress={handleKeyPress}
+          />
+
+          <Input
+            type="text"
+            placeholder="Shipping Address"
+            name="shippingAddress"
+            value={form.shippingAddress}
             onChange={handleChange}
             onKeyPress={handleKeyPress}
           />
