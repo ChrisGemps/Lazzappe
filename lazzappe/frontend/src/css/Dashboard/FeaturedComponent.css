@@ -8,7 +8,7 @@
   gap: 16px;
   box-sizing: border-box;
 }
-
+ 
 .hero-container {
   display: flex;
   align-items: center;
@@ -23,7 +23,62 @@
   flex-wrap: nowrap;
   flex: 1;
 }
-
+ 
+/* Slider wrapper and track for smooth sliding */
+.slider-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+ 
+.slider-track {
+  display: flex;
+  width: 100%;
+  transition: transform 0.6s cubic-bezier(.22,.9,.37,1);
+  will-change: transform;
+}
+ 
+.slide {
+  min-width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0; /* padding is handled by .hero-container */
+  position: relative;
+}
+ 
+/* image move-left and fade when slide is not active */
+.hero-image-section {
+  overflow: hidden;
+}
+ 
+.hero-image {
+  display: block;
+  transition: transform 0.6s cubic-bezier(.22,.9,.37,1), opacity 0.6s ease;
+  transform: translateX(0);
+  opacity: 1;
+  transform-origin: left center;
+}
+ 
+.slide.exit .hero-image {
+  transform: translateX(-150%);
+  opacity: 0;
+}
+ 
+/* fade out text and discount when slide is exiting */
+.hero-content,
+.hero-discount {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+ 
+.slide.exit .hero-content,
+.slide.exit .hero-discount {
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+}
+ 
 /* Left Content Section */
 .hero-content {
   display: flex;
@@ -33,7 +88,7 @@
   flex: 0 0 200px;
   z-index: 2;
 }
-
+ 
 .hero-badge {
   background-color: rgb(0, 21, 255);
   color: white;
@@ -44,7 +99,7 @@
   width: fit-content;
   margin-bottom: 16px;
 }
-
+ 
 .hero-title {
   font-size: 48px;
   font-weight: 700;
@@ -53,14 +108,14 @@
   line-height: 1.2;
   color: white;
 }
-
+ 
 .hero-date {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
   color: white;
 }
-
+ 
 /* Center Image Section */
 .hero-image-section {
   flex: 1;
@@ -69,13 +124,13 @@
   justify-content: center;
   z-index: 2;
 }
-
+ 
 .hero-image {
   max-width: 100%;
   max-height: 250px;
   object-fit: contain;
 }
-
+ 
 /* Right Discount Section */
 .hero-discount {
   flex: 0 0 150px;
@@ -84,7 +139,7 @@
   justify-content: center;
   z-index: 2;
 }
-
+ 
 .discount-circle {
   width: 140px;
   height: 140px;
@@ -96,7 +151,7 @@
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-
+ 
 .discount-text {
   text-align: center;
   font-size: 24px;
@@ -105,7 +160,7 @@
   margin: 0;
   line-height: 1.3;
 }
-
+ 
 /* Navigation Buttons */
 .hero-nav-btn {
   position: absolute;
@@ -125,19 +180,19 @@
   font-size: 20px;
   width: 50px;
 }
-
+ 
 .hero-nav-btn:hover {
   background-color: white;
 }
-
+ 
 .hero-prev {
   left: 300px;
 }
-
+ 
 .hero-next {
   right: 300px;
 }
-
+ 
 /* Dots Indicator */
 .hero-dots {
   display: flex;
@@ -152,7 +207,7 @@
   transform: translateX(-50%);
   width: calc(100% - 32px);
 }
-
+ 
 .dot {
   width: 12px;
   height: 12px;
@@ -162,15 +217,15 @@
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
+ 
 .dot.active {
   background-color: #41ff33;
 }
-
+ 
 .dot:hover {
   background-color: #ccc;
 }
-
+ 
 /* Right Banner Section */
 .hero-right-section {
   display: flex;
@@ -179,7 +234,7 @@
   margin: 16px;
   flex: 0 0 300px;
 }
-
+ 
 .hero-right-item {
   border-radius: 8px;
   padding: 20px;
@@ -189,40 +244,40 @@
   justify-content: space-between;
   min-height: 140px;
 }
-
+ 
 .hero-right-top {
   background: linear-gradient(135deg, #3392ff 0%, #2575d4 100%);
 }
-
+ 
 .hero-right-bottom {
   background: linear-gradient(135deg, #2575d4 0%, #1e5fb8 100%);
 }
-
+ 
 .right-badge {
   font-size: 11px;
   opacity: 0.8;
   margin-bottom: 8px;
 }
-
+ 
 .hero-right-item h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
 }
-
+ 
 .hero-right-item p {
   margin: 8px 0 0 0;
   font-size: 14px;
   font-weight: 600;
 }
-
+ 
 .games-icons {
   display: flex;
   gap: 12px;
   font-size: 24px;
   margin-top: 8px;
 }
-
+ 
 /* Responsive Design */
 @media (max-width: 1024px) {
   .hero-container {
@@ -230,40 +285,40 @@
     padding: 24px;
     min-height: auto;
   }
-
+ 
   .hero-title {
     font-size: 36px;
   }
-
+ 
   .hero-content {
     flex: 1 1 100%;
   }
-
+ 
   .hero-image-section {
     flex: 1 1 auto;
   }
-
+ 
   .hero-discount {
     flex: 0 0 auto;
   }
 }
-
+ 
 @media (max-width: 768px) {
   .hero-container {
     flex-direction: column;
     padding: 20px;
   }
-
+ 
   .hero-title {
     font-size: 28px;
   }
-
+ 
   .hero-nav-btn {
     width: 40px;
     height: 40px;
     padding: 8px;
   }
-
+ 
   .hero-right-section {
     width: 100%;
   }
