@@ -9,9 +9,9 @@ export default function FeaturedComponent() {
       id: 1,
       title: 'COMFY AT HOME',
       date: 'JUL 8',
-      badge: '#ShopeeNewNormal',
+      badge: '#LazzappeeNewNormal',
       image: 'https://i.pcmag.com/imagery/roundups/02naaOkVLe7DIiejFUyDPJp-64..v1734989633.jpg',
-      discount: 'UP TO 90% OFF'
+      discount: 'UP TO 50% OFF'
     },
     {
       id: 2,
@@ -19,7 +19,7 @@ export default function FeaturedComponent() {
       date: 'JUL 15',
       badge: '#SummerDeal',
       image: 'https://via.placeholder.com/400x300',
-      discount: 'UP TO 70% OFF'
+      discount: 'UP TO 60% OFF'
     },
     {
       id: 3,
@@ -27,7 +27,7 @@ export default function FeaturedComponent() {
       date: 'JUL 22',
       badge: '#FlashSale',
       image: 'https://via.placeholder.com/400x300',
-      discount: 'UP TO 80% OFF'
+      discount: 'UP TO 40% OFF'
     }
   ];
 
@@ -96,12 +96,12 @@ export default function FeaturedComponent() {
       {/* Right Banner Section */}
       <div className="hero-right-section">
         <div className="hero-right-item hero-right-top">
-          <span className="right-badge">#ShopeeNewNormal</span>
-          <h3>ShopeePay</h3>
-          <p>SAVE UP TO ₱650</p>
+          <span className="right-badge">#LazzappeeNewNormal</span>
+          <h3>LazzappeePay</h3>
+          <p>SAVE UP TO ₱400</p>
         </div>
         <div className="hero-right-item hero-right-bottom">
-          <h3>SHOPEE GAMES</h3>
+          <h3>LAZZAPPEE GAMES</h3>
           <div className="games-icons">
             <span>🎮</span>
             <span>🍭</span>
