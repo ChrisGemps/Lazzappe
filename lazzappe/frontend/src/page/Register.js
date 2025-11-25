@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogotextLogin, Input, Button, SocialButton, BrandSide } from "../component/components";
+import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
 import './Register.css';
 
@@ -97,7 +97,7 @@ export default function Register() {
     <div className="register-page-wrapper">
       <div className="register-page-left">
         <div className="register-form-container">
-          <LogotextLogin />
+          <Logotext />
 
           <h2 className="register-title">Create your account</h2>
 

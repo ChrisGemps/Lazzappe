@@ -12,7 +12,7 @@ export default function FeaturedComponent() {
       date: 'JUL 8',
       badge: '#LazzappeeNewNormal',
       image:
-        'https://i.pcmag.com/imagery/roundups/02naaOkVLe7DIiejFUyDPJp-64..v1734989633.jpg',
+        'https://vader-prod.s3.amazonaws.com/1704736133-81eVfaCd5zL.jpg',
       discount: 'UP TO 50% OFF'
     },
     {
@@ -37,14 +37,14 @@ export default function FeaturedComponent() {
       title: 'URBAN ESSENTIALS',
       date: 'AUG 12',
       badge: '#StreetStyle',
-      image: 'https://i5.walmartimages.com/seo/CoCopeaunts-new-Embroidered-Messenger-Bags-Women-Leather-Handbags-Hand-Bags-for-Women-Sac-a-Main-Ladies-Hand-Bag-Female-bag-sac-femme_934c9131-d115-4666-b416-8655d70b1198.4e27af0d08f935fc1148430cec95659a.jpeg%27',
+      image: 'https://i5.walmartimages.com/seo/CoCopeaunts-new-Embroidered-Messenger-Bags-Women-Leather-Handbags-Hand-Bags-for-Women-Sac-a-Main-Ladies-Hand-Bag-Female-bag-sac-femme_934c9131-d115-4666-b416-8655d70b1198.4e27af0d08f935fc1148430cec95659a.jpeg',
       discount: 'UP TO 25% OFF'
     },
     {
       id: 5,
       title: 'MINIMALIST PICKS',
       date: 'AUG 18',
-      badge: '#CleanFit',
+      badge: '#FreshFit',
       image: 'https://packmojo.com/blog/images/2021/06/weekly-favorites-minimalist-skincare-packaging-designs.jpg',
       discount: 'STARTING AT ₱299'
     },
@@ -53,7 +53,7 @@ export default function FeaturedComponent() {
       title: 'WORKOUT WEAR',
       date: 'AUG 25',
       badge: '#ActiveFit',
-      image: 'https://media.istockphoto.com/id/466367844/photo/clothes-make-running.jpg?s=612x612&w=0&k=20&c=eGOSP7X2MoXpGKhv8a3UlYHplvKvIIdUPmVKBSd3bMI=%27',
+      image: 'https://media.istockphoto.com/id/466367844/photo/clothes-make-running.jpg?s=612x612&w=0&k=20&c=eGOSP7X2MoXpGKhv8a3UlYHplvKvIIdUPmVKBSd3bMI=',
       discount: 'UP TO 35% OFF'
     }
   ];
