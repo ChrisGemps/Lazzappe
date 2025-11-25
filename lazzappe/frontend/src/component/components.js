@@ -15,6 +15,20 @@ export const Logotext = () => (
   </div>
 );
 
+export const Logotext2 = () => (
+  <div style={{ textAlign: "center", marginBottom: "0px" }}>
+    <img
+      src="/logo.png"
+      alt="LAZZAPPEE Logo"
+      style={{
+        width: "100px",
+        height: "auto",
+      }}
+    />
+  </div>
+);
+
+
 // ---------------- Logo for Login/Register ----------------
 export const LogotextLogin = () => (
   <div style={{ textAlign: "center", marginBottom: "20px" }}>
