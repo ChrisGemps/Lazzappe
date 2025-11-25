@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogotextLogin, Input, Button, SocialButton, BrandSide } from "../component/components";
+import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
 import './LoginPage.css';
 
@@ -97,7 +97,7 @@ const LoginForm = () => {
 
   return (
     <div className="login-form-wrapper">
-      <LogotextLogin />
+      <Logotext />
       
       {error && (
         <div className="error-message">
