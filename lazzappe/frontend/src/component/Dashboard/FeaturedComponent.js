@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../../css/Dashboard/FeaturedComponent.css';
  
 export default function FeaturedComponent() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prevSlide, setPrevSlide] = useState(null);
+  const navigate = useNavigate();
  
   const slides = [
     {
@@ -147,12 +149,12 @@ export default function FeaturedComponent() {
           <h3>LazzappeePay</h3>
           <p>SAVE UP TO ₱400</p>
         </div>
-        <div className="hero-right-item hero-right-bottom">
-          <h3>LAZZAPPEE GAMES</h3>
+        <div className="hero-right-item hero-right-bottom" onClick={() => navigate('/products')} style={{cursor:'pointer'}}>
+          <h3>LAZZAPPEE Products</h3>
           <div className="games-icons">
-            <span>🎮</span>
-            <span>🍭</span>
-            <span>🎣</span>
+            <span>🛍️</span>
+            <span>🛒</span>
+            <span>🏷️</span>
           </div>
         </div>
       </div>

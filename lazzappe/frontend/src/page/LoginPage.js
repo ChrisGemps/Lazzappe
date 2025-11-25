@@ -74,6 +74,12 @@ const LoginForm = () => {
       try {
         if (data) localStorage.setItem("user", JSON.stringify(data));
         localStorage.setItem('username', derivedUsername || '');
+        // dispatch a custom event so other parts of the app can react to username changes in the same tab
+        try {
+          window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: derivedUsername }));
+        } catch (ee) {
+          // ignore if custom events are unsupported
+        }
       } catch (e) {
         console.warn('Unable to persist user to localStorage', e);
       }

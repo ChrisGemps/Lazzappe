@@ -1,7 +1,7 @@
 import React from 'react';
-import '../page/Dashboard.css';
+import '../css/Dashboard/Dashboard.css';
 
-export default function ProductCard({ product, onViewDetails, onAddToCart, onBuyNow }) {
+export default function ProductCard({ product, onViewDetails, onAddToCart }) {
   return (
     <div className="product-card">
       <div className="product-image-wrapper">
@@ -15,6 +15,7 @@ export default function ProductCard({ product, onViewDetails, onAddToCart, onBuy
         <div className="product-card-content">
           <div className="product-info" onClick={() => onViewDetails(product)}>
             <div className="product-name">{product.name}</div>
+            <div className="product-desc">{product.description}</div>
             <div className="product-price">₱{product.price?.toFixed(2)}</div>
           </div>
           <div className="product-actions">
@@ -23,12 +24,6 @@ export default function ProductCard({ product, onViewDetails, onAddToCart, onBuy
               onClick={() => onAddToCart(product)}
             >
               Add
-            </button>
-            <button 
-              className="btn btn-primary" 
-              onClick={() => onBuyNow(product)}
-            >
-              Buy
             </button>
           </div>
         </div>

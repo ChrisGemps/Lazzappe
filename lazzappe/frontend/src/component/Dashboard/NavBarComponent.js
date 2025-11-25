@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ShoppingCart, Bell, HelpCircle, Search } from 'lucide-react';
 import { LogotextLogin } from '../components';
+import { useCart } from '../../context/CartContext';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
+  const { itemCount } = useCart();
   
 
   useEffect(() => {
@@ -53,9 +55,23 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
+    const currentUser = localStorage.getItem('username');
     localStorage.removeItem('username');
+    // remove user-specific cart from localStorage as requested
+    try {
+      if (currentUser) {
+        localStorage.removeItem(`cart_${currentUser}`);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
     setIsLoggedIn(false);
     setUsername('');
+    try {
+      window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: null }));
+    } catch (e) {
+      // ignore
+    }
     navigate('/');
   };
 
@@ -125,6 +141,7 @@ export default function Dashboard() {
                 aria-label="Cart"
               >
                 <ShoppingCart size={24} />
+                {itemCount > 0 && <span className="cart-badge">{itemCount}</span>}
               </button>
             </div>
           </div>
