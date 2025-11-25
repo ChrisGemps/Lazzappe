@@ -3,9 +3,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
+  const [username, setUsername] = useState(() => localStorage.getItem('username'));
+
+  const storageKeyFor = (user) => `cart_${user || 'guest'}`;
+
   const [items, setItems] = useState(() => {
     try {
-      const raw = localStorage.getItem('cart');
+      // load cart for current username or guest
+      const key = storageKeyFor(localStorage.getItem('username'));
+      const raw = localStorage.getItem(key) ?? localStorage.getItem('cart');
       return raw ? JSON.parse(raw) : [];
     } catch (e) {
       return [];
@@ -39,14 +45,67 @@ export function CartProvider({ children }) {
 
   const total = items.reduce((s, p) => s + (p.price || 0) * (p.qty || 0), 0);
 
-  // persist cart to localStorage
+  // persist cart to per-user localStorage key
   useEffect(() => {
     try {
-      localStorage.setItem('cart', JSON.stringify(items));
+      const key = storageKeyFor(username);
+      localStorage.setItem(key, JSON.stringify(items));
     } catch (e) {
       // ignore
     }
-  }, [items]);
+  }, [items, username]);
+
+  // listen for username changes from localStorage (cross-tab or login flows)
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === 'username') {
+        setUsername(e.newValue);
+      }
+    };
+    const handleCustom = (e) => {
+      // custom event from login page within same tab
+      setUsername(e?.detail || localStorage.getItem('username'));
+    };
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('lazzappe:username-changed', handleCustom);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('lazzappe:username-changed', handleCustom);
+    };
+  }, []);
+
+  // load cart when username changes (handles login flows)
+  useEffect(() => {
+    if (!username) {
+      // when there's no logged user, clear the in-memory cart (UI shows empty cart)
+      setItems([]);
+      return;
+    }
+    try {
+      const key = storageKeyFor(username);
+      const raw = localStorage.getItem(key);
+      if (raw) setItems(JSON.parse(raw));
+      else {
+        // If a guest cart exists, and the user just logged in, migrate guest cart to user cart
+        const guestKey = storageKeyFor('guest');
+        const guestRaw = localStorage.getItem(guestKey) || localStorage.getItem('cart');
+        if (guestRaw) {
+          try {
+            const guestItems = JSON.parse(guestRaw);
+            setItems(guestItems);
+            // persist to user cart key
+            localStorage.setItem(key, JSON.stringify(guestItems));
+            // optional: clear guest cart
+            // localStorage.removeItem(guestKey);
+          } catch (e) {
+            // ignore parse errors
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [username]);
 
   return (
     <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQty, clearCart, itemCount, total, open, setOpen }}>

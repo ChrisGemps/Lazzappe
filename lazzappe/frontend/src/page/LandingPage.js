@@ -43,8 +43,10 @@ export default function LazzappeeLandingPage() {
         </div>
 
         <div className="lz-hero-graphic">
-          {/* Placeholder graphic box - replace with SVG/3D image if needed */}
-          <div className="lz-graphic-box">STORE GRAPHIC HERE</div>
+          {/* Replace the placeholder graphic box with an SVG asset in public */}
+          <div className="lz-graphic-box">
+            <img src="/assets/lzp.png" alt="Store hero graphic" className="lz-graphic-image" />
+          </div>
         </div>
       </main>
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import CategoryCard from "./CategoryCard";
 import '../../css/Dashboard/CategorySectionComponent.css';
 
@@ -26,8 +27,12 @@ export default function CategorySectionComponent(){
     { id: 20, icon: 'https://nationalbicycle.org.ph/wp-content/uploads/2021/05/dyu-d3-3-colors.jpg', label: 'Electric Bikes' },
   ]);
 
+  const navigate = useNavigate();
+
   const handleCategoryClick = (category) => {
-    console.log('Clicked:', category.label);
+    // Navigate to products listing with category filter
+    const encoded = encodeURIComponent(category.label);
+    navigate(`/products?category=${encoded}`);
   };
 
   return (
