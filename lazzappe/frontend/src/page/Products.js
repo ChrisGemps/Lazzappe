@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ProductCard from '../component/ProductCard';
 import ProductModal from '../component/ProductModal';
 import { useCart } from '../context/CartContext';
+import NavBarComponent from "../component/Dashboard/NavBarComponent";
 import '../css/Dashboard/Products.css';
 
 // Simple query parser
@@ -118,7 +119,9 @@ export default function Products() {
   }, [products, category]);
 
   return (
+    
     <div className="products-wrapper">
+      <NavBarComponent />
       <div className="products-header">
         <h2>Products {category ? ` - ${category}` : ''}</h2>
         <div className="products-header-buttons">
