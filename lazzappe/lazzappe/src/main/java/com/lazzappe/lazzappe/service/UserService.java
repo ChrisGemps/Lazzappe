@@ -57,4 +57,15 @@ public class UserService {
 
         return user;
     }
+
+    //delete this if it doesnt work kay malibang sako
+    public User getUserById(Long userId) throws Exception {
+    Optional<User> userOptional = userRepository.findById(userId);
+    
+    if (userOptional.isEmpty()) {
+        throw new Exception("User not found");
+    }
+    
+    return userOptional.get();
+}
 }

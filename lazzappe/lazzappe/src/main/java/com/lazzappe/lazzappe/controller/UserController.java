@@ -63,4 +63,29 @@ public class UserController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+    
+    //delete this if it doesnt work kay malibang sako
+    @PostMapping("/profile")
+    public ResponseEntity<?> getUserProfile(@RequestBody Map<String, String> request) {
+    try {
+        String userIdStr = request.get("userId");
+        Long userId = Long.parseLong(userIdStr);
+        
+        User user = userService.getUserById(userId);
+        
+        // Don't send password back to client
+        Map<String, Object> response = new HashMap<>();
+        response.put("user_id", user.getUser_id());
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        response.put("phone_number", user.getPhone_number());
+        response.put("role", user.getRole());
+        
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return ResponseEntity.badRequest().body(error);
+    }
+}
 }
