@@ -1,7 +1,9 @@
 package com.lazzappe.lazzappe.controller;
 
 import com.lazzappe.lazzappe.entity.User;
+import com.lazzappe.lazzappe.entity.Customer;
 import com.lazzappe.lazzappe.service.UserService;
+import com.lazzappe.lazzappe.service.CustomerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,16 +16,21 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
+    private final CustomerService customerService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, CustomerService customerService) {
         this.userService = userService;
+        this.customerService = customerService;
     }
+    
+
 
     // Register endpoint
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         try {
             User registeredUser = userService.registerUser(user);
+            // Customer regiCustomer = customerService.regiCustomer(user);
             
             // Don't send password back to client
             Map<String, Object> response = new HashMap<>();
@@ -31,13 +38,14 @@ public class UserController {
             response.put("username", registeredUser.getUsername());
             response.put("email", registeredUser.getEmail());
             response.put("message", "Registration successful");
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
+
     }
 
     // Login endpoint
@@ -63,4 +71,29 @@ public class UserController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+    
+    //delete this if it doesnt work kay malibang sako
+    @PostMapping("/profile")
+    public ResponseEntity<?> getUserProfile(@RequestBody Map<String, String> request) {
+    try {
+        String userIdStr = request.get("userId");
+        Long userId = Long.parseLong(userIdStr);
+        
+        User user = userService.getUserById(userId);
+        
+        // Don't send password back to client
+        Map<String, Object> response = new HashMap<>();
+        response.put("user_id", user.getUser_id());
+        response.put("username", user.getUsername());
+        response.put("email", user.getEmail());
+        response.put("phone_number", user.getPhone_number());
+        response.put("role", user.getRole());
+        
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return ResponseEntity.badRequest().body(error);
+    }
+}
 }

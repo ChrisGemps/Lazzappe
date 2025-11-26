@@ -21,11 +21,18 @@
   max-width: 400px;
 }
 
+/* Keep the register logo smaller and close to title */
+.register-form-container img[src$="Lazzappee_logohd.png"] {
+  display: block;
+  margin: 0 auto 8px;
+  max-height: 110px; /* ensures the logo is not too large */
+}
+
 /* Register Title */
 .register-title {
   text-align: center;
   color: #5a36c9;
-  margin-top: 100px;
+  margin-top: 12px; /* reduced from 100px to bring title closer to logo */
   margin-bottom: 10px;
   font-weight: 600;
 }

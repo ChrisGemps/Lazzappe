@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LogotextLogin, Input, Button, SocialButton, BrandSide } from "../component/components";
+import { Logotext, Input, Button, SocialButton, BrandSide } from "../component/components";
 import { useNavigate, Link } from "react-router-dom";
 import './Register.css';
 
@@ -11,6 +11,7 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    shippingAddress: "",
   });
 
   const [error, setError] = useState("");
@@ -21,7 +22,7 @@ export default function Register() {
   };
 
   const validateForm = () => {
-    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword) {
+    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword || !form.shippingAddress) {
       setError("Please fill in all fields");
       return false;
     }
@@ -64,6 +65,8 @@ export default function Register() {
           username: form.username,
           email: form.email,
           password: form.password,
+          shipping_address: form.shippingAddress,
+
         }),
       });
 
@@ -96,7 +99,7 @@ export default function Register() {
     <div className="register-page-wrapper">
       <div className="register-page-left">
         <div className="register-form-container">
-          <LogotextLogin />
+          <Logotext />
 
           <h2 className="register-title">Create your account</h2>
 
@@ -138,6 +141,15 @@ export default function Register() {
             placeholder="Confirm Password"
             name="confirmPassword"
             value={form.confirmPassword}
+            onChange={handleChange}
+            onKeyPress={handleKeyPress}
+          />
+
+          <Input
+            type="text"
+            placeholder="Shipping Address"
+            name="shippingAddress"
+            value={form.shippingAddress}
             onChange={handleChange}
             onKeyPress={handleKeyPress}
           />

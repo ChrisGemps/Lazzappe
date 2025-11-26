@@ -148,6 +148,26 @@
   flex-shrink: 0;
 }
 
+.cart-icon-button {
+  position: relative;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ff3b30;
+  color: white;
+  border-radius: 50%;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 0 5px;
+}
+
 .navbar-cart:hover {
   opacity: 0.8;
 }
@@ -194,5 +214,27 @@
 .navbar-categories::-webkit-scrollbar-thumb:hover {
   background: #3381ff;
 }
+
+/* Generic button styles (used by product cards & other UI) */
+.btn {
+  border-radius: 6px;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background-color: #3358ff;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #f1f1f1;
+  color: #333;
+  border: 1px solid #e1e1e1;
+}
+
+.btn:hover { opacity: 0.95; }
 
 
