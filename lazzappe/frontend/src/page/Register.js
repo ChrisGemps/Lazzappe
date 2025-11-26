@@ -22,7 +22,7 @@ export default function Register() {
   };
 
   const validateForm = () => {
-    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword) {
+    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword || !form.shippingAddress) {
       setError("Please fill in all fields");
       return false;
     }
@@ -65,6 +65,8 @@ export default function Register() {
           username: form.username,
           email: form.email,
           password: form.password,
+          shipping_address: form.shippingAddress,
+
         }),
       });
 
