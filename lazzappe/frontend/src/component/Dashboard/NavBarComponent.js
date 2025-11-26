@@ -54,26 +54,33 @@ export default function Dashboard() {
     navigate('/dashboard');
   };
 
-  const handleLogout = () => {
-    const currentUser = localStorage.getItem('username');
-    localStorage.removeItem('username');
-    // remove user-specific cart from localStorage as requested
-    try {
-      if (currentUser) {
-        localStorage.removeItem(`cart_${currentUser}`);
-      }
-    } catch (e) {
-      // ignore storage errors
+const handleLogout = () => {
+  const currentUser = localStorage.getItem('username');
+  
+  // Clear all user data from localStorage
+  localStorage.removeItem('username');
+  localStorage.removeItem('user'); // Add this line - clears the user object
+  
+  // remove user-specific cart from localStorage as requested
+  try {
+    if (currentUser) {
+      localStorage.removeItem(`cart_${currentUser}`);
     }
-    setIsLoggedIn(false);
-    setUsername('');
-    try {
-      window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: null }));
-    } catch (e) {
-      // ignore
-    }
-    navigate('/');
-  };
+  } catch (e) {
+    // ignore storage errors
+  }
+  
+  setIsLoggedIn(false);
+  setUsername('');
+  
+  try {
+    window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: null }));
+  } catch (e) {
+    // ignore
+  }
+  
+  navigate('/');
+};
 
   return (
     <>
