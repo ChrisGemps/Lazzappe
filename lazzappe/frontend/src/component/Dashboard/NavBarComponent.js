@@ -114,7 +114,7 @@ export default function Dashboard() {
             <div className="navbar-top-left">
               <a href="#" className="nav-link">Seller Centre</a>
               <a href="#" className="nav-link">Sell on Lazzappee</a>
-              <span>Follow us on</span>
+              <span>Follow us on ⓕ 𝕏 📸【ꚠ】</span>
             </div>
             <div className="navbar-top-right">
               <Bell size={16} />
