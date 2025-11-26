@@ -7,8 +7,8 @@
   --card-bg: #ffffff;
   --text-dark: #222;
   --text-muted: #666;
-  --accent: #ff7b5c;
-  --accent-hover: #ff6240;
+  --accent: #7a5ed1;
+  --accent-hover: #5a36c9;
   --shadow-soft: 0 4px 12px rgba(0,0,0,0.06);
   --shadow-hover: 0 8px 22px rgba(0,0,0,0.12);
 }
@@ -28,6 +28,7 @@
 
 /* Header */
 .products-header {
+  margin-top: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;

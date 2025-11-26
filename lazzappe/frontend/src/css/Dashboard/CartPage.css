@@ -73,31 +73,33 @@
 .cart-grid {
   display: grid;
   gap: 1.5rem;
+  grid-template-columns: 1fr; /* Default: single column on smaller screens */
 }
 
 @media (min-width: 1024px) {
   .cart-grid {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 2fr 1fr; /* Two columns on larger screens */
   }
 }
 
 .cart-items {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1rem; /* Increased gap for better spacing */
 }
 
 .cart-item {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 1rem;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s;
+  transition: all 0.3s ease-in-out;
 }
 
 .cart-item:hover {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-5px); /* Slight upward motion on hover */
 }
 
 .cart-item-content {
@@ -115,6 +117,14 @@
 
 .cart-item-details {
   flex: 1;
+}
+
+.cart-item-header {
+  display: flex;
+  justify-content: space-between;  /* Keeps items spread across the available space */
+  align-items: center;
+  gap: 1rem;
+  position: relative; /* Makes it a containing block for absolute positioning */
 }
 
 .cart-item-name {
@@ -135,7 +145,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
 }
+
+.quantity-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: #f3f4f6;
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  white-space: nowrap;
+} 
 
 .quantity-control {
   display: flex;
@@ -144,7 +166,10 @@
   background: #f3f4f6;
   border-radius: 9999px;
   padding: 0.5rem 1rem;
+  position: absolute; /* This positions the quantity control relative to the .cart-item-header */
+  right: 0; /* Pushes the control to the right */
 }
+
 
 .quantity-btn {
   color: #7a5ed1;
@@ -174,13 +199,17 @@
 }
 
 .remove-btn {
-  color: #f87171;
+  color: #ff0000;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0.5rem;
   transition: color 0.3s;
   font-size: 1.25rem;
+  position: absolute;  /* This removes it from the flow of other elements */
+  bottom: -5rem;  /* Positions the button below the cart item */
+  right: 0;  /* Pushes it to the far right */
+  font-weight: bold;
 }
 
 .remove-btn:hover {
@@ -350,21 +379,3 @@
 .voucher-label { color:#6b7280; font-size:13px; }
 .remove-voucher { background:none; border:none; cursor:pointer; color:#f87171; font-size:14px; }
 
-/* Voucher Suggestions Dropdown */
-.voucher-suggestions {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  width: 100%;
-  max-height: 180px;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  z-index: 60;
-}
-.voucher-suggestion { padding: 8px 12px; display:flex; flex-direction:column; gap:2px; cursor:pointer; }
-.voucher-suggestion:hover { background:#f5f7ff; }
-.voucher-suggestion-main { font-weight:700; color:#1f2937; }
-.voucher-suggestion-sub { font-size:13px; color:#6b7280; }

@@ -76,6 +76,7 @@ const CartPage = () => {
   const taxAfterDiscount = discountedSubtotal * 0.1;
   const grandTotal = Math.max(0, discountedSubtotal + taxAfterDiscount + shippingAfterVoucher);
 
+  /*
   // Redirect to login if no user is currently logged-in (we check a username saved to localStorage on login)
   useEffect(() => {
     const username = localStorage.getItem('username') || null;
@@ -84,6 +85,7 @@ const CartPage = () => {
       navigate('/login', { replace: true, state: { from: '/cart' } });
     }
   }, [navigate]);
+ */
 
   return (
     <div className="cart-page-root">
@@ -95,27 +97,30 @@ const CartPage = () => {
               <Logotext2 />
             </div>
           </div>
-
           <div className="cart-grid">
             <div className="cart-items">
               {cartItems.map(item => (
-                <div key={item.id} className="cart-item">
-                  <div className="cart-item-content">
-                    <img src={item.image} alt={item.name} className="cart-item-image" />
-                    <div className="cart-item-details">
-                      <h3 className="cart-item-name">{item.name}</h3>
-                      <p className="cart-item-price">₱{(item.price).toFixed(2)}</p>
-                      <div className="cart-item-actions">
-                        <div className="quantity-control">
-                          <button onClick={() => updateQuantity(item.id, -1)} className="quantity-btn">−</button>
-                          <span className="quantity-value">{item.qty || item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.id, 1)} className="quantity-btn">+</button>
-                        </div>
-                        <button onClick={() => removeItem(item.id)} className="remove-btn">🗑</button>
-                      </div>
-                    </div>
+            <div className="cart-item">
+            <div className="cart-item-content">
+              <img src={item.image} alt={item.name} className="cart-item-image" />
+              <div className="cart-item-details">
+                <div className="cart-item-header">
+                  <h3 className="cart-item-name">{item.name}</h3>
+                  <div className="quantity-control">
+                    <button onClick={() => updateQuantity(item.id, -1)} className="quantity-btn">−</button>
+                    <span className="quantity-value">{item.qty || item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.id, 1)} className="quantity-btn">+</button>
                   </div>
+                <div className="cart-item-actions">
+                  <button onClick={() => removeItem(item.id)} className="remove-btn">✕</button>
                 </div>
+                </div>
+                <p className="cart-item-price">₱{(item.price).toFixed(2)}</p>
+                
+
+              </div>
+            </div>
+          </div>
               ))}
               {cartItems.length === 0 && (
                 <div className="empty-cart">
