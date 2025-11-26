@@ -15,7 +15,7 @@ export default function ProductModal({ product, onClose, onAdd }) {
             <div style={{fontWeight:700, marginTop:8}}>₱{product.price?.toFixed(2) ?? '0.00'}</div>
             <div style={{marginTop:12, display:'flex', gap:8}}>
               <button className="btn btn-secondary" onClick={() => onAdd(product)}>Add to cart</button>
-              <button className="btn btn-primary" onClick={() => { onAdd(product); onClose(); }}>Buy now</button>
+              <button className="btn btn-primary" onClick={() => { const ok = onAdd(product); if (ok !== false) onClose(); }}>Buy now</button>
             </div>
           </div>
         </div>

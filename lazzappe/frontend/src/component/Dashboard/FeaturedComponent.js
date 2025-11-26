@@ -11,53 +11,57 @@ export default function FeaturedComponent() {
     {
       id: 1,
       title: 'COMFY AT HOME',
-      date: 'JUL 8',
+      date: 'DEC 12',
       badge: '#LazzappeeNewNormal',
-      image:
-        'https://vader-prod.s3.amazonaws.com/1704736133-81eVfaCd5zL.jpg',
-      discount: 'UP TO 50% OFF'
+      image: 'https://vader-prod.s3.amazonaws.com/1704736133-81eVfaCd5zL.jpg',
+      discount: 'UP TO 50% OFF',
+      category: 'Home Furnitures',
     },
     {
       id: 2,
       title: 'SUMMER SALE',
-      date: 'JUL 15',
+      date: 'NOV 30',
       badge: '#SummerDeal',
       image: 'https://image.made-in-china.com/318f0j00yEURFhrWvopf/-824057-1-mp4.webp',
-      discount: 'UP TO 60% OFF'
+      discount: 'UP TO 60% OFF',
+      category: "Women's Apparel",
     },
     {
       id: 3,
       title: 'FLASH DEALS',
-      date: 'JUL 22',
+      date: 'DEC 02',
       badge: '#FlashSale',
-      image:
-        'https://novaedgethreads.com/cdn/shop/files/Baklaback-view-oversized-tee-mockup-of-a-man-sitting-on-a-customizable-cube-m38922.png?v=1726961585%27',
-      discount: 'UP TO 40% OFF'
+      image: 'https://novaedgethreads.com/cdn/shop/files/Baklaback-view-oversized-tee-mockup-of-a-man-sitting-on-a-customizable-cube-m38922.png?v=1726961585%27',
+      discount: 'UP TO 40% OFF',
+      category: "Men's Apparel",
     },
     {
       id: 4,
       title: 'URBAN ESSENTIALS',
-      date: 'AUG 12',
+      date: 'NOV 12',
       badge: '#StreetStyle',
       image: 'https://i5.walmartimages.com/seo/CoCopeaunts-new-Embroidered-Messenger-Bags-Women-Leather-Handbags-Hand-Bags-for-Women-Sac-a-Main-Ladies-Hand-Bag-Female-bag-sac-femme_934c9131-d115-4666-b416-8655d70b1198.4e27af0d08f935fc1148430cec95659a.jpeg',
-      discount: 'UP TO 25% OFF'
+      discount: 'UP TO 25% OFF',
+      category: 'Bags & Accessories',
     },
     {
       id: 5,
       title: 'MINIMALIST PICKS',
-      date: 'AUG 18',
+      date: 'NOV 18',
       badge: '#FreshFit',
       image: 'https://packmojo.com/blog/images/2021/06/weekly-favorites-minimalist-skincare-packaging-designs.jpg',
-      discount: 'STARTING AT ₱299'
+      discount: 'STARTING AT ₱299',
+      category: 'Health & Personal Care',
     },
     {
       id: 6,
       title: 'WORKOUT WEAR',
-      date: 'AUG 25',
+      date: 'NOV 25',
       badge: '#ActiveFit',
       image: 'https://media.istockphoto.com/id/466367844/photo/clothes-make-running.jpg?s=612x612&w=0&k=20&c=eGOSP7X2MoXpGKhv8a3UlYHplvKvIIdUPmVKBSd3bMI=',
-      discount: 'UP TO 35% OFF'
-    }
+      discount: 'UP TO 35% OFF',
+      category: 'Shoes',
+    },
   ];
  
   const nextSlide = () => {
@@ -75,7 +79,7 @@ export default function FeaturedComponent() {
     setCurrentSlide(index);
   };
  
-  // auto-slide every 3 seconds
+  // auto-slide every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => {
@@ -100,17 +104,30 @@ export default function FeaturedComponent() {
               if (index === currentSlide) classes.push('active');
               if (index === prevSlide) classes.push('exit');
               return (
-                <div className={classes.join(' ')} key={s.id}>
+                <div
+                  className={classes.join(' ')}
+                  key={s.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/products?category=${encodeURIComponent(s.category || s.title)}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/products?category=${encodeURIComponent(s.category || s.title)}`);
+                    }
+                  }}
+                  aria-label={`View products: ${s.category || s.title}`}
+                >
                   <div className="hero-content">
                     <span className="hero-badge">{s.badge}</span>
                     <h1 className="hero-title">{s.title}</h1>
                     <p className="hero-date">{s.date}</p>
                   </div>
- 
+
                   <div className="hero-image-section">
                     <img src={s.image} alt={s.title} className="hero-image" />
                   </div>
- 
+
                   <div className="hero-discount">
                     <div className="discount-circle">
                       <p className="discount-text">{s.discount}</p>
@@ -121,15 +138,15 @@ export default function FeaturedComponent() {
             })}
           </div>
         </div>
- 
+
         {/* Navigation Buttons */}
-        <button className="hero-nav-btn hero-prev" onClick={prevSlideAction}>
+        <button className="hero-nav-btn hero-prev" onClick={prevSlideAction} aria-label="Previous slide">
           ❮
         </button>
-        <button className="hero-nav-btn hero-next" onClick={nextSlide}>
+        <button className="hero-nav-btn hero-next" onClick={nextSlide} aria-label="Next slide">
           ❯
         </button>
- 
+
         {/* Dots Indicator */}
         <div className="hero-dots">
           {slides.map((_, index) => (
@@ -137,11 +154,12 @@ export default function FeaturedComponent() {
               key={index}
               className={`dot ${index === currentSlide ? 'active' : ''}`}
               onClick={() => goToSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
             />
           ))}
         </div>
       </div>
- 
+
       {/* Right Banner Section */}
       <div className="hero-right-section">
         <div className="hero-right-item hero-right-top">
@@ -161,3 +179,6 @@ export default function FeaturedComponent() {
     </div>
   );
 }
+ 
+
+ 

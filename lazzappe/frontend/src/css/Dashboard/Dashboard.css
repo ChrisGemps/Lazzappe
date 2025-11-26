@@ -1,5 +1,6 @@
 .body-wrapper{
-  margin-inline: 100px;
+  /* remove heavy page indent so header fits full width */
+  margin-inline: 0;
   margin-top: 10px;
   border-radius: 10px;
   background-color: #f5f5f5;
@@ -22,7 +23,9 @@
   align-items: center;
   font-size: 13px;
   border-bottom: 1px solid #d0d9e8;
-  width: 1300px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
 }
 
 .navbar-top-left,
@@ -32,15 +35,45 @@
   align-items: center;
 }
 
+/* Make top-header nav-links more subtle and compact */
+.navbar-top .nav-link {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+.navbar-top .nav-link:hover {
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.08);
+}
+
 .nav-link {
   color: #2d3e75 !important;
   text-decoration: none;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-weight: 600;
 }
 
 .nav-link:hover {
-  opacity: 0.8;
+  background: #ffffff;
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+
+.nav-link:focus-visible {
+  outline: 3px solid rgba(51,146,255,0.18);
+  outline-offset: 2px;
 }
 
 /* Main Header */
@@ -58,7 +91,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  width: 1300px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
 }
 
 /* Logo */
@@ -137,6 +172,19 @@
   background-color: #3381ff;
 }
 
+/* Logout button style - look like link but keep padding */
+.btn-logout {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: #2d3e75;
+  font-weight: 600;
+}
+.btn-logout:hover {
+  background: #fff;
+  border-radius: 6px;
+}
+
 /* Cart */
 .navbar-cart {
   display: flex;
@@ -189,12 +237,26 @@
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
-  transition: color 0.2s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
   flex-shrink: 0;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  font-size: 13px;
 }
 
 .category-link:hover {
   color: #ff6633;
+  background: #fff8f3;
+  transform: translateY(-2px);
+  border-color: #ffd3bf;
+}
+
+.category-link:focus-visible {
+  outline: 3px solid rgba(255,160,120,0.18);
+  outline-offset: 2px;
 }
 
 /* Scrollbar styling for category nav */
@@ -213,6 +275,27 @@
 
 .navbar-categories::-webkit-scrollbar-thumb:hover {
   background: #3381ff;
+}
+
+/* Nav toast message for login welcome */
+.nav-toast {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  background: #3b82f6; /* blue */
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: all 250ms ease-in-out;
+  z-index: 9999;
+  font-weight: 600;
+}
+.nav-toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Generic button styles (used by product cards & other UI) */
