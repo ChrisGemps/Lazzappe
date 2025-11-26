@@ -91,7 +91,7 @@ export default function Dashboard() {
               <HelpCircle size={16} />
               {isLoggedIn ? (
                 <>
-                  <span className="nav-link">Welcome, {username}</span>
+                  <span className="nav-link" onClick={() => navigate('/profile')}>Welcome, {username}</span>
                   <button
                     className="nav-link btn-logout"
                     onClick={handleLogout}
