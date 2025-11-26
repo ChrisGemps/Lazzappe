@@ -1,18 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Logotext } from "../component/components";
+import { Logotext,LoginModal } from "../component/components";
 import "../css/Dashboard/LandingPage.css";
+
 
 export default function LazzappeeLandingPage() {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  
+  const handleLogin = () => {
+    setOpen(true);
+  };
 
   const handleShopNow = () => {
     navigate("/dashboard");
   };
 
-  const handleLogin = () => {
-    navigate("/login");
-  };
+  
 
   const handleSignup = () => {
     navigate("/register");
@@ -25,7 +29,10 @@ export default function LazzappeeLandingPage() {
         <nav className="lz-nav">
           <a href="#home" className="lz-nav-link">FEEDBACK</a>
           <a href="#about" className="lz-nav-link">ABOUT US</a>
-          <a href="#product" className="lz-nav-link" onClick={handleLogin}>LOGIN</a>
+          <>
+            <button className="lz-nav-link" onClick={handleLogin}>LOGIN</button>
+            <LoginModal open={open} onClose={() => setOpen(false)} />
+          </>
           <a href="#contact" className="lz-nav-link" onClick={handleSignup}>SIGNUP</a>
         </nav>
         <div className="lz-menu-icon">☰</div>
