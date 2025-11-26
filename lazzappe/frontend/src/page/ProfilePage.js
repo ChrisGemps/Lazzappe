@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../css/Dashboard/ProfilePage.css';
 import NavBarComponent from "../component/Dashboard/NavBarComponent";
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,6 +32,8 @@ export default function ProfilePage() {
       if (!userStr) {
         setError('User not logged in. Please login first.');
         setLoading(false);
+        // Redirect to login page after 2 seconds
+        setTimeout(() => navigate('/login'), 5000);
         return;
       }
       
@@ -42,6 +46,8 @@ export default function ProfilePage() {
       if (!userId) {
         setError('User ID not found. Please login again.');
         setLoading(false);
+        // Redirect to login page after 2 seconds
+        setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
