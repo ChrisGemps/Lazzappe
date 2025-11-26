@@ -75,13 +75,26 @@ export function LoginModal({ open, onClose }){
       try {
         if (data) localStorage.setItem("user", JSON.stringify(data));
         localStorage.setItem('username', derivedUsername || '');
+        // Set temporary flag so NavBar can show the welcome toast after navigation
+        try { localStorage.setItem('justLoggedIn', 'true'); } catch (ee) {}
+        // notify other tabs and components about login
+        try {
+          window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: derivedUsername }));
+        } catch (ee) {
+          // ignore if custom events are unsupported
+        }
+        // close modal after successful login
+        if (typeof onClose === 'function') onClose();
       } catch (e) {
         console.warn('Unable to persist user to localStorage', e);
       }
 
-      // Navigate to dashboard
-      // navigate("/dashboard");
-      navigate("/dashboard");
+      // Navigate to dashboard if desired
+      try {
+        navigate("/dashboard");
+      } catch (err) {
+        // ignore navigation errors if not needed
+      }
     } catch (error) {
       const errorMessage = error.message || "Login failed. Please try again.";
       setError(errorMessage);
@@ -124,6 +137,7 @@ export function LoginModal({ open, onClose }){
           onClick={signinClick}
           disabled={loading}
         />
+        {error && <div className="error-message" style={{ color: 'red', marginTop: 8 }}>{error}</div>}
   
         <div class="divider-container">
           <div class="divider-line"></div>

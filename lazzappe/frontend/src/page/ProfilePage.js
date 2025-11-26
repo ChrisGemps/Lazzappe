@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/Dashboard/ProfilePage.css';
 import NavBarComponent from "../component/Dashboard/NavBarComponent";
@@ -19,11 +19,7 @@ export default function ProfilePage() {
   const [editedProfile, setEditedProfile] = useState(profile);
 
   // Fetch user profile on component mount
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       // Get user object from localStorage (saved during login)
@@ -92,7 +88,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleEdit = () => {
     setIsEditing(true);

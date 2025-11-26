@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/Dashboard/CartPage.css';
 import NavBarComponent from "../component/Dashboard/NavBarComponent";
-import { Logotext2 } from './components';
+import { Logotext2, LoginModal } from './components';
+import { Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const CartPage = () => {
-  const { items: cartItems, addToCart, updateQty, removeFromCart, clearCart } = useCart();
+  const { items: cartItems, updateQty, removeFromCart } = useCart();
   const navigate = useNavigate();
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const updateQuantity = (id, change) => {
     const item = cartItems.find(i => i.id === id);
@@ -30,9 +32,9 @@ const CartPage = () => {
   const [isVoucherInputFocused, setIsVoucherInputFocused] = useState(false);
 
   const availableVouchers = {
-    'LP40': { code: 'LP40', type: 'percent', value: 40, label: '40% off' },
-    'NEW200': { code: 'NEW200', type: 'fixed', value: 200, label: '₱200 off' },
-    'SHIPFREE': { code: 'SHIPFREE', type: 'shipping', value: shippingBase, label: 'Free Shipping' }
+    'LP40': { code: 'LP40', type: 'percent', value: 40, label: ': 40% off' },
+    'NEW200': { code: 'NEW200', type: 'fixed', value: 200, label: ': ₱200 off' },
+    'SHIPFREE': { code: 'SHIPFREE', type: 'shipping', value: shippingBase, label: ': Free Shipping' }
   };
 
   const MAX_VOUCHERS = 3;
@@ -76,16 +78,26 @@ const CartPage = () => {
   const taxAfterDiscount = discountedSubtotal * 0.1;
   const grandTotal = Math.max(0, discountedSubtotal + taxAfterDiscount + shippingAfterVoucher);
 
-  /*
-  // Redirect to login if no user is currently logged-in (we check a username saved to localStorage on login)
+  // Show login modal if no user is currently logged in
   useEffect(() => {
     const username = localStorage.getItem('username') || null;
     if (!username) {
-      // redirect to login; optionally, preserve where user came from
-      navigate('/login', { replace: true, state: { from: '/cart' } });
+      setLoginModalOpen(true);
     }
-  }, [navigate]);
- */
+  }, []);
+
+  // Close login modal if user logs in (same tab or other tabs)
+  useEffect(() => {
+    const handler = () => {
+      if (localStorage.getItem('username')) setLoginModalOpen(false);
+    };
+    window.addEventListener('storage', handler);
+    window.addEventListener('lazzappe:username-changed', handler);
+    return () => {
+      window.removeEventListener('storage', handler);
+      window.removeEventListener('lazzappe:username-changed', handler);
+    };
+  }, []);
 
   return (
     <div className="cart-page-root">
@@ -97,30 +109,30 @@ const CartPage = () => {
               <Logotext2 />
             </div>
           </div>
+
           <div className="cart-grid">
             <div className="cart-items">
               {cartItems.map(item => (
-            <div className="cart-item">
-            <div className="cart-item-content">
-              <img src={item.image} alt={item.name} className="cart-item-image" />
-              <div className="cart-item-details">
-                <div className="cart-item-header">
-                  <h3 className="cart-item-name">{item.name}</h3>
-                  <div className="quantity-control">
-                    <button onClick={() => updateQuantity(item.id, -1)} className="quantity-btn">−</button>
-                    <span className="quantity-value">{item.qty || item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, 1)} className="quantity-btn">+</button>
+                <div key={item.id} className="cart-item">
+                  <div className="cart-item-content">
+                    <img src={item.image} alt={item.name} className="cart-item-image" />
+                    <div className="cart-item-details">
+                      <h3 className="cart-item-name">{item.name}</h3>
+                      <p className="cart-item-price">₱{(item.price).toFixed(2)}</p>
+                      <div className="cart-item-actions">
+                        <div className="quantity-control">
+                          <button onClick={() => updateQuantity(item.id, -1)} className="quantity-btn">−</button>
+                          <span className="quantity-value">{item.qty || item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.id, 1)} className="quantity-btn">+</button>
+                        </div>
+                        <button onClick={() => removeItem(item.id)} className="remove-btn" aria-label={`Remove ${item.name}`}>
+                          <Trash2 size={16} />
+                          <span className="remove-btn-text">Remove</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                <div className="cart-item-actions">
-                  <button onClick={() => removeItem(item.id)} className="remove-btn">✕</button>
                 </div>
-                </div>
-                <p className="cart-item-price">₱{(item.price).toFixed(2)}</p>
-                
-
-              </div>
-            </div>
-          </div>
               ))}
               {cartItems.length === 0 && (
                 <div className="empty-cart">
@@ -188,6 +200,7 @@ const CartPage = () => {
           </div>
         </div>
       </div>
+      <LoginModal open={loginModalOpen} onClose={() => { setLoginModalOpen(false); navigate('/dashboard'); }} />
     </div>
   );
 }

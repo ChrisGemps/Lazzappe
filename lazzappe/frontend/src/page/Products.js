@@ -19,11 +19,13 @@ export default function Products() {
   // For now, a mocked product list. Replace with fetch to API if available.
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [toast, setToast] = useState({ show: false, message: '' });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Close login modal if user logs in (same tab or another tab)
   const { addToCart } = useCart();
 
   useEffect(() => {
-    // Mocked sample products. Replace with fetch(`/api/products`) for real data.
+    
     const mock = [
       // Men's Apparel
       { id: 1, name: "Men's Classic Tee", category: "Men's Apparel", price: 599.99, image: 'https://img.lazcdn.com/g/p/18b963d0d661cbbda28a299c35664f26.jpg_720x720q80.jpg', description: 'Comfortable classic tee made of breathable cotton.' },
@@ -109,9 +111,20 @@ export default function Products() {
     setProducts(mock);
   }, []);
 
+  const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+
   const filtered = useMemo(() => {
     const arr = category
-      ? products.filter((p) => p.category && p.category.toLowerCase().includes(category.toLowerCase()))
+      ? products.filter((p) => {
+          if (!p.category) return false;
+          const catNorm = normalize(p.category);
+          const queryNorm = normalize(category);
+          // Prefer exact category match (normalized) to avoid 'men' matching 'women'
+          if (catNorm === queryNorm) return true;
+          // fallback: allow substring match only if query is longer than 3 characters
+          if (queryNorm.length > 3 && catNorm.includes(queryNorm)) return true;
+          return false;
+        })
       : products;
 
     // Alphabetical order by product name
@@ -121,26 +134,32 @@ export default function Products() {
   return (
     
     <div className="products-wrapper">
-      <NavBarComponent />
+      <NavBarComponent showCategories={false} />
+      <div>
+  <ul>&nbsp;</ul>
+</div>
+
       <div className="products-header">
         <h2>Products {category ? ` - ${category}` : ''}</h2>
-        <div className="products-header-buttons">
-          <button onClick={() => navigate('/cart')} className="btn btn-secondary">Go to Cart</button>
-          <button onClick={() => navigate('/dashboard')} className="btn btn-secondary">← Back to Dashboard</button>
-        </div>
       </div>
 
       <div className="products-grid">
-        {filtered.map((p) => (
+            {filtered.map((p) => (
           <ProductCard
             key={p.id}
             product={p}
             onViewDetails={(prod) => setSelectedProduct(prod)}
-            onAddToCart={(prod) => {
-              addToCart(prod);
-              setToast({ show: true, message: `${prod.name} has been added to your cart` });
-              setTimeout(() => setToast({ show: false, message: '' }), 2500);
-            }}
+                onAddToCart={(prod) => {
+                        const username = localStorage.getItem('username');
+                        if (!username) {
+                          setToast({ show: true, message: 'Cannot add to cart — please log in first', type: 'error' });
+                          setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+                          return;
+                        }
+                        addToCart(prod);
+                        setToast({ show: true, message: `${prod.name} has been added to your cart`, type: 'success' });
+                        setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+                      }}
           />
         ))}
 
@@ -154,11 +173,23 @@ export default function Products() {
         <ProductModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAdd={(prod) => { addToCart(prod); setToast({ show: true, message: `${prod.name} has been added to your cart` }); setTimeout(() => setToast({ show: false, message: '' }), 2500); }}
+                onAdd={(prod) => {
+            const username = localStorage.getItem('username');
+            if (!username) {
+              setToast({ show: true, message: 'Cannot add to cart — please log in first', type: 'error' });
+              setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+              return false;
+            }
+            addToCart(prod);
+            setToast({ show: true, message: `${prod.name} has been added to your cart`, type: 'success' });
+            setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+            return true;
+          }}
         />
       )}
+      {/* No modal for login on Products - show error toast instead when trying to add as guest */}
       {toast.show && (
-        <div className="products-toast">{toast.message}</div>
+        <div className={`products-toast ${toast.type === 'error' ? 'error' : ''}`}>{toast.message}</div>
       )}
     </div>
   );

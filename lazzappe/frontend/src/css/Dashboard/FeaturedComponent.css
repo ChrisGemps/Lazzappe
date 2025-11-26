@@ -4,7 +4,7 @@
   padding: 16px;
   margin-bottom: 24px;
   display: flex;
-  padding-inline: 100px;
+  padding-inline: 16px;
   gap: 16px;
   box-sizing: border-box;
 }
@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  background: linear-gradient(135deg, #3399ff 0%, #25d4ab 100%);
+  background: linear-gradient(135deg, #0f4377 0%,#057bf2 55%, #e42f60 100%);
   border-radius: 8px;
   padding: 32px;
   position: relative;
@@ -90,7 +90,7 @@
 }
  
 .hero-badge {
-  background-color: rgb(0, 21, 255);
+  background-color: rgb(13, 20, 95);
   color: white;
   padding: 6px 12px;
   border-radius: 20px;
@@ -156,7 +156,7 @@
   text-align: center;
   font-size: 24px;
   font-weight: 700;
-  color: #3392ff;
+  color: #194981bf;
   margin: 0;
   line-height: 1.3;
 }
@@ -183,7 +183,7 @@
 }
 
 .hero-nav-btn:hover {
-  background-color: white;
+  background-color: rgb(225, 105, 6);
   transform: translateY(-2px);
 }
 
@@ -238,21 +238,33 @@
 }
  
 .hero-right-item {
-  border-radius: 8px;
-  padding: 20px;
-  color: white;
+  border-radius: 12px;
+  padding: 24px;
+  color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 140px;
+  min-height: 150px;
+
+  background: linear-gradient(135deg, #4a4a4a, #2c2c2c);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
 }
+
+.hero-right-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(135deg, #2d9214, #b51fc0);
+}
+
  
 .hero-right-top {
-  background: linear-gradient(135deg, #3392ff 0%, #2575d4 100%);
+  background: linear-gradient(135deg, #18569da9 0%, #146dd9 100%);
 }
  
 .hero-right-bottom {
-  background: linear-gradient(135deg, #2575d4 0%, #1e5fb8 100%);
+  background: linear-gradient(135deg, #e91818 0%, #c80a5d 100%);
 }
  
 .right-badge {
@@ -324,4 +336,14 @@
   .hero-right-section {
     width: 100%;
   }
+}
+
+.slide {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.slide:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 10px 30px rgba(215, 10, 10, 0.12);
 }
