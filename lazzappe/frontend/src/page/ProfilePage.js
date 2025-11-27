@@ -52,16 +52,22 @@ export default function ProfilePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: userId
-        })
+        // backend expects a string value for userId (controller parses it as Long)
+        body: JSON.stringify({ userId: String(userId) })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch profile');
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        console.warn('Profile endpoint returned non-json response', jsonErr);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        // prefer server-provided message when available
+        const serverMsg = data && (data.error || data.message);
+        throw new Error(serverMsg || `Failed to fetch profile (status ${response.status})`);
+      }
       console.log('Profile data:', data);
       
       // Set profile data from response
@@ -83,7 +89,8 @@ export default function ProfilePage() {
       
       setError(null);
     } catch (err) {
-      setError('Failed to load profile');
+      const msg = err?.message || String(err) || 'Failed to load profile';
+      setError(msg);
       console.error('Error fetching profile:', err);
     } finally {
       setLoading(false);
