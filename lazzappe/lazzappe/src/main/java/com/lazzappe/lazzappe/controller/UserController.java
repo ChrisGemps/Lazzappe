@@ -72,22 +72,76 @@ public class UserController {
         }
     }
     
-    //delete this if it doesnt work kay malibang sako
+    // Get user profile
     @PostMapping("/profile")
     public ResponseEntity<?> getUserProfile(@RequestBody Map<String, String> request) {
+        try {
+            String userIdStr = request.get("userId");
+            Long userId = Long.parseLong(userIdStr);
+            
+            User user = userService.getUserById(userId);
+            
+            // Don't send password back to client
+            Map<String, Object> response = new HashMap<>();
+            response.put("user_id", user.getUser_id());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEmail());
+            response.put("phone_number", user.getPhone_number());
+            response.put("role", user.getRole());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    } // <-- THIS CLOSING BRACE WAS MISSING
+
+    // Update user profile
+    @PostMapping("/update-profile")
+    public ResponseEntity<?> updateUserProfile(@RequestBody Map<String, Object> request) {
+        try {
+            String userIdStr = (String) request.get("userId");
+            Long userId = Long.parseLong(userIdStr);
+            
+            // Create a User object with the updated fields
+            User updatedUser = new User();
+            updatedUser.setUsername((String) request.get("username"));
+            updatedUser.setEmail((String) request.get("email"));
+            updatedUser.setPhone_number((String) request.get("phone_number"));
+            
+            User user = userService.updateUserProfile(userId, updatedUser);
+            
+            // Don't send password back to client
+            Map<String, Object> response = new HashMap<>();
+            response.put("user_id", user.getUser_id());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEmail());
+            response.put("phone_number", user.getPhone_number());
+            response.put("role", user.getRole());
+            response.put("message", "Profile updated successfully");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    // Change password endpoint
+@PostMapping("/change-password")
+public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
     try {
         String userIdStr = request.get("userId");
         Long userId = Long.parseLong(userIdStr);
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
         
-        User user = userService.getUserById(userId);
+        userService.changePassword(userId, currentPassword, newPassword);
         
-        // Don't send password back to client
-        Map<String, Object> response = new HashMap<>();
-        response.put("user_id", user.getUser_id());
-        response.put("username", user.getUsername());
-        response.put("email", user.getEmail());
-        response.put("phone_number", user.getPhone_number());
-        response.put("role", user.getRole());
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Password changed successfully");
         
         return ResponseEntity.ok(response);
     } catch (Exception e) {

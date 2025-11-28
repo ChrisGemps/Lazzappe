@@ -28,8 +28,7 @@ export default function ProfilePage() {
       if (!userStr) {
         setError('User not logged in. Please login first.');
         setLoading(false);
-        // Redirect to login page after 2 seconds
-        setTimeout(() => navigate('/login'), 5000);
+        setTimeout(() => navigate('/login'), 2000);
         return;
       }
       
@@ -42,7 +41,6 @@ export default function ProfilePage() {
       if (!userId) {
         setError('User ID not found. Please login again.');
         setLoading(false);
-        // Redirect to login page after 2 seconds
         setTimeout(() => navigate('/login'), 2000);
         return;
       }
@@ -106,11 +104,67 @@ export default function ProfilePage() {
     setEditedProfile(profile);
   };
 
-  const handleSave = () => {
-    // For now, just save locally until you add the update endpoint
-    setProfile(editedProfile);
-    setIsEditing(false);
-    alert('Profile updated! (Note: Changes are not saved to database yet)');
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch('http://localhost:8080/api/auth/update-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: String(editedProfile.user_id),
+          username: editedProfile.username,
+          email: editedProfile.email,
+          phone_number: editedProfile.phone_number
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
+      }
+
+      const data = await response.json();
+      console.log('Updated profile:', data);
+      
+      // Update profile state with new data
+      setProfile({
+        user_id: data.user_id,
+        username: data.username,
+        email: data.email,
+        phone_number: data.phone_number || '',
+        role: data.role || 'Member'
+      });
+      
+      // Update localStorage with new username
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.username = data.username;
+        user.email = data.email;
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('username', data.username);
+        
+        // Dispatch event to update username in navbar
+        try {
+          window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: data.username }));
+        } catch (e) {
+          // ignore
+        }
+      }
+      
+      setIsEditing(false);
+      setError(null);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      setError(err.message);
+      console.error('Error updating profile:', err);
+      alert(err.message || 'Failed to update profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -122,7 +176,10 @@ export default function ProfilePage() {
     setEditedProfile({ ...editedProfile, [field]: value });
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    const currentPassword = prompt('Enter your current password:');
+    if (!currentPassword) return;
+
     const newPassword = prompt('Enter new password:');
     if (!newPassword) return;
 
@@ -132,8 +189,35 @@ export default function ProfilePage() {
       return;
     }
 
-    // For now, just show alert until you add the password change endpoint
-    alert('Password change feature will be available once backend endpoint is added');
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: String(profile.user_id),
+          currentPassword: currentPassword,
+          newPassword: newPassword
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to change password');
+      }
+
+      const data = await response.json();
+      alert('Password changed successfully!');
+    } catch (err) {
+      console.error('Error changing password:', err);
+      alert(err.message || 'Failed to change password. Please try again.');
+    }
   };
 
   if (loading && !profile.user_id) {
