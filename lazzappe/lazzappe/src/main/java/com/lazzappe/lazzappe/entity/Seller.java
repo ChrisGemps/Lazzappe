@@ -6,9 +6,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "seller")
+@PrimaryKeyJoinColumn(name = "user_id")
 public class Seller extends User {
-    
-    private Long customer_id; // Based on your diagram
     
     private String store_name;
     
@@ -20,8 +19,9 @@ public class Seller extends User {
     @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products = new ArrayList<>();
     
-    // Constructors
-    public Seller() {}
+    public Seller() {
+        super();
+    }
     
     public Seller(String username, String email, String password, String phone_number, 
                   String store_name, String store_description, String business_license) {
@@ -30,10 +30,6 @@ public class Seller extends User {
         this.store_description = store_description;
         this.business_license = business_license;
     }
-    
-    // Getters and Setters
-    public Long getCustomer_id() { return customer_id; }
-    public void setCustomer_id(Long customer_id) { this.customer_id = customer_id; }
     
     public String getStore_name() { return store_name; }
     public void setStore_name(String store_name) { this.store_name = store_name; }

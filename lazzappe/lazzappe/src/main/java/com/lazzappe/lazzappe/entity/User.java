@@ -23,9 +23,8 @@ public class User {
     private String phone_number;
     
     @Column(nullable = false)
-    private String role; // "CUSTOMER", "SELLER", or "BOTH"
+    private String role;
     
-    // Constructors
     public User() {}
     
     public User(String username, String email, String password, String phone_number, String role) {
@@ -36,7 +35,6 @@ public class User {
         this.role = role;
     }
     
-    // Getters and Setters
     public Long getUser_id() { return user_id; }
     public void setUser_id(Long user_id) { this.user_id = user_id; }
     

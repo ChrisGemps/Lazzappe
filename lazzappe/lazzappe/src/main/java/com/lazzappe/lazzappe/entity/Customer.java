@@ -6,9 +6,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "customer")
+@PrimaryKeyJoinColumn(name = "user_id")
 public class Customer extends User {
-    
-    private Long customer_id;
     
     private String shipping_address;
     
@@ -20,8 +19,9 @@ public class Customer extends User {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Order> orders = new ArrayList<>();
     
-    // Constructors
-    public Customer() {}
+    public Customer() {
+        super();
+    }
     
     public Customer(String username, String email, String password, String phone_number, 
                     String shipping_address, String billing_address) {
@@ -29,10 +29,6 @@ public class Customer extends User {
         this.shipping_address = shipping_address;
         this.billing_address = billing_address;
     }
-    
-    // Getters and Setters
-    public Long getCustomer_id() { return customer_id; }
-    public void setCustomer_id(Long customer_id) { this.customer_id = customer_id; }
     
     public String getShipping_address() { return shipping_address; }
     public void setShipping_address(String shipping_address) { this.shipping_address = shipping_address; }
