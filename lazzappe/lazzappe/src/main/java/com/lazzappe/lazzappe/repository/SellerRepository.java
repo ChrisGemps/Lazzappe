@@ -16,4 +16,7 @@ public interface SellerRepository extends JpaRepository<Seller, Long> {
     // Optional helper methods
     Optional<Seller> findByUser_Username(String username);
     Optional<Seller> findByUser_Email(String email);
+    // alternative method names (no underscore) to support different naming styles
+    Optional<Seller> findByUserUsername(String username);
+    Optional<Seller> findByUserEmail(String email);
 }

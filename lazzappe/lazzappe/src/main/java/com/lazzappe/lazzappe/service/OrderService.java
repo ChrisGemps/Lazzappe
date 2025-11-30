@@ -29,7 +29,7 @@ public class OrderService {
 
     public Order createOrder(String username, List<Map<String, Object>> items) throws Exception {
         // Find customer by username (or create placeholder)
-        Optional<Customer> customerOpt = customerRepository.findByUser_Username(username);
+        Optional<Customer> customerOpt = customerRepository.findByUserUsername(username);
         Customer customer = customerOpt.orElseThrow(() -> new Exception("Customer not found"));
 
         // Create order
