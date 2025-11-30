@@ -456,3 +456,208 @@
     width: 100%;
   }
 }
+
+/* Role Switch Section */
+.role-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #f3f4f6;
+}
+
+.role-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.role-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.role-switch-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #7a5ed1;
+  background: transparent;
+  color: #7a5ed1;
+  min-width: 140px;
+  text-align: center;
+}
+
+.role-switch-btn:hover:not(:disabled) {
+  background: #7a5ed1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(122, 94, 209, 0.3);
+}
+
+.role-switch-btn.active {
+  background: linear-gradient(to right, #7a5ed1, #5a36c9);
+  color: white;
+  border-color: #5a36c9;
+}
+
+.role-switch-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(to right, #7a5ed1, #5a36c9);
+  color: white;
+  border-color: #5a36c9;
+}
+
+.role-switch-btn:disabled::after {
+  content: " Switching...";
+}
+
+/* Address Cards for Customer */
+.address-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.address-card {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.3s;
+}
+
+.address-card:hover {
+  border-color: #7a5ed1;
+  box-shadow: 0 4px 12px rgba(122, 94, 209, 0.15);
+}
+
+.address-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #7a5ed1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+/* Seller Section */
+.seller-section {
+  margin-top: 2rem;
+}
+
+.seller-fields {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.field-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  color: #1f2937;
+  transition: all 0.3s;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: #7a5ed1;
+  box-shadow: 0 0 0 3px rgba(122, 94, 209, 0.1);
+}
+
+.field-textarea {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  color: #1f2937;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.3s;
+}
+
+.field-textarea:focus {
+  outline: none;
+  border-color: #7a5ed1;
+  box-shadow: 0 0 0 3px rgba(122, 94, 209, 0.1);
+}
+
+/* Status Messages */
+.success-message {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid #10b981;
+}
+
+.error-message {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid #ef4444;
+}
+
+/* Role Buttons */
+.role-switch-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.role-btn {
+  padding: 0.5rem 1.5rem;
+  border-radius: 2rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #7a5ed1;
+  background: transparent;
+  color: #7a5ed1;
+  min-width: 120px;
+  text-align: center;
+}
+
+.role-btn:hover:not(:disabled) {
+  background: #7a5ed1;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(122, 94, 209, 0.3);
+}
+
+.role-btn.active {
+  background: linear-gradient(to right, #7a5ed1, #5a36c9);
+  color: white;
+  border-color: #5a36c9;
+  box-shadow: 0 10px 15px -3px rgba(122, 94, 209, 0.3);
+}
+
+.role-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
