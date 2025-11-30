@@ -1,56 +1,60 @@
 package com.lazzappe.lazzappe.service;
 
 import com.lazzappe.lazzappe.entity.User;
+import com.lazzappe.lazzappe.entity.Customer;
+import com.lazzappe.lazzappe.entity.Seller;
 import com.lazzappe.lazzappe.repository.UserRepository;
+import com.lazzappe.lazzappe.repository.CustomerRepository;
+import com.lazzappe.lazzappe.repository.SellerRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
+    private final SellerRepository sellerRepository;
+    private final CustomerService customerService;
+    private final SellerService sellerService;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, CustomerRepository customerRepository, 
+                       SellerRepository sellerRepository, CustomerService customerService, 
+                       SellerService sellerService) {
         this.userRepository = userRepository;
+        this.customerRepository = customerRepository;
+        this.sellerRepository = sellerRepository;
+        this.customerService = customerService;
+        this.sellerService = sellerService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
     public User registerUser(User user) throws Exception {
-        // Check if username or email already exists
-        Optional<User> existingUserByUsername = userRepository.findByUsername(user.getUsername());
-        if (existingUserByUsername.isPresent()) {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new Exception("Username already taken");
         }
-
-        Optional<User> existingUserByEmail = userRepository.findByEmail(user.getEmail());
-        if (existingUserByEmail.isPresent()) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new Exception("Email already registered");
         }
 
-        // Set default role if not provided
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("CUSTOMER");
         }
 
-        // Hash the password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         return userRepository.save(user);
     }
 
     public User loginUser(String username, String password) throws Exception {
-        Optional<User> userOptional = userRepository.findByUsername(username);
-        
-        if (userOptional.isEmpty()) {
-            throw new Exception("Invalid username or password");
-        }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new Exception("Invalid username or password"));
 
-        User user = userOptional.get();
-        
-        // Check if password matches
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new Exception("Invalid username or password");
         }
@@ -59,68 +63,114 @@ public class UserService {
     }
 
     public User getUserById(Long userId) throws Exception {
-        Optional<User> userOptional = userRepository.findById(userId);
-        
-        if (userOptional.isEmpty()) {
-            throw new Exception("User not found");
-        }
-        
-        return userOptional.get();
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new Exception("User not found"));
     }
 
-    public User updateUserProfile(Long userId, User updatedUser) throws Exception {
-        Optional<User> userOptional = userRepository.findById(userId);
-        
-        if (userOptional.isEmpty()) {
-            throw new Exception("User not found");
+    public Map<String, Object> getFullProfile(Long userId) throws Exception {
+        User user = getUserById(userId);
+        Map<String, Object> profile = new HashMap<>();
+
+        profile.put("user_id", user.getUser_id());
+        profile.put("username", user.getUsername());
+        profile.put("email", user.getEmail());
+        profile.put("phone_number", user.getPhone_number());
+        profile.put("role", user.getRole());
+
+        // Customer-specific info
+        if ("CUSTOMER".equals(user.getRole())) {
+            Optional<Customer> custOpt = customerRepository.findByUser(user);
+            custOpt.ifPresent(c -> {
+                profile.put("shipping_address", c.getShipping_address());
+                profile.put("billing_address", c.getBilling_address());
+            });
         }
-        
-        User existingUser = userOptional.get();
-        
-        // Update only the fields that are allowed to be changed
-        if (updatedUser.getUsername() != null && !updatedUser.getUsername().isEmpty()) {
-            // Check if new username is already taken by another user
-            Optional<User> userWithUsername = userRepository.findByUsername(updatedUser.getUsername());
-            if (userWithUsername.isPresent() && !userWithUsername.get().getUser_id().equals(userId)) {
-                throw new Exception("Username already taken");
+
+        // Seller-specific info
+        if ("SELLER".equals(user.getRole())) {
+            Optional<Seller> sellerOpt = sellerRepository.findByUser(user);
+            sellerOpt.ifPresent(s -> {
+                profile.put("store_name", s.getStore_name());
+                profile.put("store_description", s.getStore_description());
+                profile.put("business_license", s.getBusiness_license());
+            });
+        }
+
+        return profile;
+    }
+
+    @Transactional
+    public Map<String, Object> updateFullProfile(Long userId, Map<String, Object> updates) throws Exception {
+        User user = getUserById(userId);
+
+        // Update user fields
+        if (updates.containsKey("username")) user.setUsername((String) updates.get("username"));
+        if (updates.containsKey("email")) user.setEmail((String) updates.get("email"));
+        if (updates.containsKey("phone_number")) user.setPhone_number((String) updates.get("phone_number"));
+        userRepository.save(user);
+
+        // Update customer info
+        if ("CUSTOMER".equals(user.getRole())) {
+            String shipping = (String) updates.get("shipping_address");
+            String billing = (String) updates.get("billing_address");
+
+            Optional<Customer> custOpt = customerRepository.findByUser(user);
+            if (custOpt.isPresent()) {
+                Customer c = custOpt.get();
+                c.setShipping_address(shipping);
+                c.setBilling_address(billing);
+                customerRepository.save(c);
+            } else {
+                customerService.insertCustomer(user, shipping, billing);
             }
-            existingUser.setUsername(updatedUser.getUsername());
         }
-        
-        if (updatedUser.getEmail() != null && !updatedUser.getEmail().isEmpty()) {
-            // Check if new email is already taken by another user
-            Optional<User> userWithEmail = userRepository.findByEmail(updatedUser.getEmail());
-            if (userWithEmail.isPresent() && !userWithEmail.get().getUser_id().equals(userId)) {
-                throw new Exception("Email already registered");
+
+        // Update seller info
+        if ("SELLER".equals(user.getRole())) {
+            String storeName = (String) updates.get("store_name");
+            String storeDesc = (String) updates.get("store_description");
+            String busLic = (String) updates.get("business_license");
+
+            Optional<Seller> sellerOpt = sellerRepository.findByUser(user);
+            if (sellerOpt.isPresent()) {
+                Seller s = sellerOpt.get();
+                s.setStore_name(storeName);
+                s.setStore_description(storeDesc);
+                s.setBusiness_license(busLic);
+                sellerRepository.save(s);
+            } else {
+                sellerService.insertSeller(user, storeName, storeDesc, busLic);
             }
-            existingUser.setEmail(updatedUser.getEmail());
         }
-        
-        if (updatedUser.getPhone_number() != null) {
-            existingUser.setPhone_number(updatedUser.getPhone_number());
-        }
-        
-        return userRepository.save(existingUser);
+
+        return getFullProfile(userId);
+    }
+
+    @Transactional
+    public User updateRoleOnly(Long userId, String newRole) throws Exception {
+        User user = getUserById(userId);
+        user.setRole(newRole);
+        return userRepository.save(user);
+    }
+
+    public User switchRole(Long userId, String newRole) throws Exception {
+        User user = getUserById(userId);
+        updateRoleOnly(userId, newRole);
+
+        if ("CUSTOMER".equals(newRole)) customerService.insertCustomerIfNotExists(user);
+        else if ("SELLER".equals(newRole)) sellerService.insertSellerIfNotExists(user);
+
+        return getUserById(userId);
     }
 
     public boolean changePassword(Long userId, String currentPassword, String newPassword) throws Exception {
-    Optional<User> userOptional = userRepository.findById(userId);
-    
-    if (userOptional.isEmpty()) {
-        throw new Exception("User not found");
+        User user = getUserById(userId);
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new Exception("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        return true;
     }
-    
-    User user = userOptional.get();
-    
-    // Verify current password
-    if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-        throw new Exception("Current password is incorrect");
-    }
-    
-    // Hash and save new password
-    user.setPassword(passwordEncoder.encode(newPassword));
-    userRepository.save(user);
-    
-    return true;
-}
 }

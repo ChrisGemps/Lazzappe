@@ -1,9 +1,14 @@
 package com.lazzappe.lazzappe.service;
 
 import com.lazzappe.lazzappe.entity.Customer;
+import com.lazzappe.lazzappe.entity.User;
 import com.lazzappe.lazzappe.repository.CustomerRepository;
+import com.lazzappe.lazzappe.repository.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.util.Optional;
 
@@ -11,50 +16,100 @@ import java.util.Optional;
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public CustomerService (CustomerRepository customerRepository) {
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public CustomerService(CustomerRepository customerRepository, UserRepository userRepository) {
         this.customerRepository = customerRepository;
+        this.userRepository = userRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
-    public Customer regiCustomer(Customer customer) throws Exception {
-        // Check if username or email already exists
-        Optional<Customer> existingUserByUsername = customerRepository.findByUsername(customer.getUsername());
-        if (existingUserByUsername.isPresent()) {
+    @Transactional
+    public Customer registerCustomer(Customer customer) throws Exception {
+        User user = customer.getUser();
+
+        if (userRepository.existsByUsername(user.getUsername())) {
             throw new Exception("Username already taken");
         }
-
-        Optional<Customer> existingUserByEmail = customerRepository.findByEmail(customer.getEmail());
-        if (existingUserByEmail.isPresent()) {
+        if (userRepository.existsByEmail(user.getEmail())) {
             throw new Exception("Email already registered");
         }
 
-        // Set default role if not provided
-        if (customer.getRole() == null || customer.getRole().isEmpty()) {
-            customer.setRole("CUSTOMER");
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("CUSTOMER");
         }
 
-        // Hash the password before saving
-        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        User savedUser = userRepository.save(user);
+        customer.setUser(savedUser);
 
         return customerRepository.save(customer);
     }
 
-    public Customer loginUser(String username, String password) throws Exception {
-        Optional<Customer> userOptional = customerRepository.findByUsername(username);
-        
-        if (userOptional.isEmpty()) {
-            throw new Exception("Invalid username or password");
-        }
+    public Customer loginCustomer(String username, String password) throws Exception {
+        Optional<User> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty()) throw new Exception("Invalid username or password");
 
-        Customer customer = userOptional.get();
-        
-        // Check if password matches
-        if (!passwordEncoder.matches(password, customer.getPassword())) {
-            throw new Exception("Invalid username or password");
-        }
+        User user = userOptional.get();
+        if (!passwordEncoder.matches(password, user.getPassword())) throw new Exception("Invalid username or password");
 
-        return customer;
+        Optional<Customer> customerOptional = customerRepository.findByUser(user);
+        if (customerOptional.isEmpty()) throw new Exception("Customer not found for user");
+
+        return customerOptional.get();
+    }
+
+    @Transactional
+    public Customer insertCustomer(User user, String shippingAddress, String billingAddress) {
+        Customer customer = new Customer();
+        customer.setUser(user);
+        customer.setShipping_address(shippingAddress);
+        customer.setBilling_address(billingAddress);
+
+        Customer savedCustomer = customerRepository.save(customer);
+        entityManager.flush();
+
+        return savedCustomer;
+    }
+
+    @Transactional
+    public Customer updateCustomerAddresses(User user, String shippingAddress, String billingAddress) {
+        Optional<Customer> customerOptional = customerRepository.findByUser(user);
+        if (customerOptional.isEmpty()) throw new RuntimeException("Customer not found for user");
+
+        Customer customer = customerOptional.get();
+        customer.setShipping_address(shippingAddress);
+        customer.setBilling_address(billingAddress);
+
+        Customer updatedCustomer = customerRepository.save(customer);
+        entityManager.flush();
+
+        return updatedCustomer;
+    }
+
+    public Optional<Customer> findById(Long id) {
+        return customerRepository.findById(id);
+    }
+
+    public Customer save(Customer customer) {
+        return customerRepository.save(customer);
+    }
+
+
+    /**
+     * Ensure a Customer exists for the given User. If absent, create a minimal Customer record.
+     */
+    @Transactional
+    public Customer insertCustomerIfNotExists(User user) {
+        Optional<Customer> existing = customerRepository.findByUser(user);
+        if (existing.isPresent()) return existing.get();
+
+        // Create with empty addresses when none provided
+        return insertCustomer(user, "", "");
     }
 }
