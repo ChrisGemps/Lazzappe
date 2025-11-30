@@ -79,7 +79,7 @@ public class UserService {
 
         // Customer-specific info
         if ("CUSTOMER".equals(user.getRole())) {
-            Optional<Customer> custOpt = customerRepository.findByUser(user);
+            Optional<Customer> custOpt = customerRepository.findByUserUsername(user.getUsername());
             custOpt.ifPresent(c -> {
                 profile.put("shipping_address", c.getShipping_address());
                 profile.put("billing_address", c.getBilling_address());
@@ -114,7 +114,7 @@ public class UserService {
             String shipping = (String) updates.get("shipping_address");
             String billing = (String) updates.get("billing_address");
 
-            Optional<Customer> custOpt = customerRepository.findByUser(user);
+            Optional<Customer> custOpt = customerRepository.findByUserUsername(user.getUsername());
             if (custOpt.isPresent()) {
                 Customer c = custOpt.get();
                 c.setShipping_address(shipping);

@@ -32,10 +32,10 @@ public class CustomerService {
     public Customer registerCustomer(Customer customer) throws Exception {
         User user = customer.getUser();
 
-        if (userRepository.existsByUsername(user.getUsername())) {
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new Exception("Username already taken");
         }
-        if (userRepository.existsByEmail(user.getEmail())) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new Exception("Email already registered");
         }
 
@@ -58,7 +58,7 @@ public class CustomerService {
         User user = userOptional.get();
         if (!passwordEncoder.matches(password, user.getPassword())) throw new Exception("Invalid username or password");
 
-        Optional<Customer> customerOptional = customerRepository.findByUser(user);
+        Optional<Customer> customerOptional = customerRepository.findByUserUsername(user.getUsername());
         if (customerOptional.isEmpty()) throw new Exception("Customer not found for user");
 
         return customerOptional.get();
@@ -79,7 +79,7 @@ public class CustomerService {
 
     @Transactional
     public Customer updateCustomerAddresses(User user, String shippingAddress, String billingAddress) {
-        Optional<Customer> customerOptional = customerRepository.findByUser(user);
+        Optional<Customer> customerOptional = customerRepository.findByUserUsername(user.getUsername());
         if (customerOptional.isEmpty()) throw new RuntimeException("Customer not found for user");
 
         Customer customer = customerOptional.get();
@@ -106,7 +106,7 @@ public class CustomerService {
      */
     @Transactional
     public Customer insertCustomerIfNotExists(User user) {
-        Optional<Customer> existing = customerRepository.findByUser(user);
+        Optional<Customer> existing = customerRepository.findByUserUsername(user.getUsername());
         if (existing.isPresent()) return existing.get();
 
         // Create with empty addresses when none provided
