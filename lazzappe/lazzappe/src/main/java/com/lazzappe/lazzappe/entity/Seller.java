@@ -1,32 +1,51 @@
 package com.lazzappe.lazzappe.entity;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "seller")
 public class Seller {
 
-            @Id
-            @GeneratedValue(strategy = GenerationType.IDENTITY)
-            private Long seller_id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "seller_id")
+    private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    private String store_name;
-    private String store_description;
-    private String business_license;
+    @Column(name = "store_name")
+    private String storeName;
 
-    // Getters and Setters
-    public Long getSeller_id() { return seller_id; }
-    public void setSeller_id(Long seller_id) { this.seller_id = seller_id; }
+    @Column(name = "store_description")
+    private String storeDescription;
+
+    @Column(name = "business_license")
+    private String businessLicense;
+
+    // One-to-many: a seller has many products
+    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Product> products = new ArrayList<>();
+
+    // Getters / setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
-    public String getStore_name() { return store_name; }
-    public void setStore_name(String store_name) { this.store_name = store_name; }
-    public String getStore_description() { return store_description; }
-    public void setStore_description(String store_description) { this.store_description = store_description; }
-    public String getBusiness_license() { return business_license; }
-    public void setBusiness_license(String business_license) { this.business_license = business_license; }
+
+    public String getStoreName() { return storeName; }
+    public void setStoreName(String storeName) { this.storeName = storeName; }
+
+    public String getStoreDescription() { return storeDescription; }
+    public void setStoreDescription(String storeDescription) { this.storeDescription = storeDescription; }
+
+    public String getBusinessLicense() { return businessLicense; }
+    public void setBusinessLicense(String businessLicense) { this.businessLicense = businessLicense; }
+
+    public List<Product> getProducts() { return products; }
+    public void setProducts(List<Product> products) { this.products = products; }
 }

@@ -12,7 +12,8 @@ public class Product {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long product_id;
+    @Column(name = "product_id")
+    private Long id;
     
     @Column(nullable = false)
     private String name;
@@ -26,11 +27,13 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
     
-    private String image_url;
+    @Column(name = "image_url")
+    private String imageUrl;
     
     private String category;
     
-    private LocalDateTime created_at;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
     
     @ManyToOne
     @JoinColumn(name = "seller_id", nullable = false)
@@ -46,20 +49,20 @@ public class Product {
     public Product() {}
     
     public Product(String name, String description, BigDecimal price, Integer stock, 
-                   String image_url, String category, Seller seller) {
+                   String imageUrl, String category, Seller seller) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.stock = stock;
-        this.image_url = image_url;
+        this.imageUrl = imageUrl;
         this.category = category;
         this.seller = seller;
-        this.created_at = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
     
-    // Getters and Setters
-    public Long getProduct_id() { return product_id; }
-    public void setProduct_id(Long product_id) { this.product_id = product_id; }
+    // Getters / setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -73,14 +76,14 @@ public class Product {
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
     
-    public String getImage_url() { return image_url; }
-    public void setImage_url(String image_url) { this.image_url = image_url; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     
-    public LocalDateTime getCreated_at() { return created_at; }
-    public void setCreated_at(LocalDateTime created_at) { this.created_at = created_at; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
     public Seller getSeller() { return seller; }
     public void setSeller(Seller seller) { this.seller = seller; }

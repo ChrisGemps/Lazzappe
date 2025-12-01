@@ -1,7 +1,12 @@
 package com.lazzappe.lazzappe.controller;
 
+import com.lazzappe.lazzappe.entity.Customer;
+import com.lazzappe.lazzappe.entity.Seller;
 import com.lazzappe.lazzappe.entity.User;
-import com.lazzappe.lazzappe.service.UserService;
+import com.lazzappe.lazzappe.repository.CustomerRepository;
+import com.lazzappe.lazzappe.repository.SellerRepository;
+import com.lazzappe.lazzappe.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,136 +15,124 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000") // allow your React app
 public class UserController {
 
-    private final UserService userService;
+    @Autowired
+    private UserRepository userRepository;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-    
+    @Autowired
+    private CustomerRepository customerRepository;
 
+    @Autowired
+    private SellerRepository sellerRepository;
 
-    // Register endpoint
+    // ---------------- REGISTER ----------------
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, Object> payload) {
         try {
-            User registeredUser = userService.registerUser(user);
-            
-            // Don't send password back to client
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", registeredUser.getUser_id());
-            response.put("username", registeredUser.getUsername());
-            response.put("email", registeredUser.getEmail());
-            response.put("message", "Registration successful");
+            // Extract common fields
+            String username = (String) payload.get("username");
+            String email = (String) payload.get("email");
+            String password = (String) payload.get("password");
+            String phoneNumber = (String) payload.getOrDefault("phone_number", null);
+            String shippingAddress = (String) payload.get("shipping_address");
+            String billingAddress = (String) payload.getOrDefault("billing_address", shippingAddress);
+            Boolean registerAsSeller = (Boolean) payload.getOrDefault("register_as_seller", false);
 
+            // Check for existing username/email
+            if (userRepository.existsByUsername(username)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
+            }
+            if (userRepository.existsByEmail(email)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email already registered"));
+            }
+
+            // Create User entity
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPassword(password); // TODO: Encode password with BCryptPasswordEncoder
+            user.setPhone_number(phoneNumber);
+
+            userRepository.save(user);
+
+            // Create Customer entity
+            Customer customer = new Customer();
+            customer.setUser(user);
+            customer.setShippingAddress(shippingAddress);
+            customer.setBillingAddress(billingAddress);
+
+            customerRepository.save(customer);
+
+            // If registering as seller, create Seller entity
+            if (registerAsSeller) {
+                String storeName = (String) payload.get("store_name");
+                String storeDescription = (String) payload.get("store_description");
+                String businessLicense = (String) payload.getOrDefault("business_license", null);
+
+                Seller seller = new Seller();
+                seller.setUser(user);
+                seller.setStoreName(storeName);
+                seller.setStoreDescription(storeDescription);
+                seller.setBusinessLicense(businessLicense);
+
+                sellerRepository.save(seller);
+            }
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "User registered successfully");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
 
-    }
-
-    // Login endpoint
-    @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> credentials) {
-        try {
-            String username = credentials.get("username");
-            String password = credentials.get("password");
-            
-            User user = userService.loginUser(username, password);
-            
-            // Don't send password back to client
-            Map<String, Object> response = new HashMap<>();
-            response.put("id", user.getUser_id());
-            response.put("username", user.getUsername());
-            response.put("email", user.getEmail());
-            response.put("message", "Login successful");
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-    
-    // Get user profile
-    @PostMapping("/profile")
-    public ResponseEntity<?> getUserProfile(@RequestBody Map<String, String> request) {
-        try {
-            String userIdStr = request.get("userId");
-            Long userId = Long.parseLong(userIdStr);
-            Map<String, Object> profile = userService.getFullProfile(userId);
-            return ResponseEntity.ok(profile);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    } // <-- THIS CLOSING BRACE WAS MISSING
-
-    // Update user profile
-    @PostMapping("/update-profile")
-    public ResponseEntity<?> updateUserProfile(@RequestBody Map<String, Object> request) {
-        try {
-            String userIdStr = (String) request.get("userId");
-            Long userId = Long.parseLong(userIdStr);
-            Map<String, Object> profile = userService.updateFullProfile(userId, request);
-            Map<String, Object> response = new HashMap<>(profile);
-            response.put("message", "Profile updated successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
-
-    @PostMapping("/switch-role")
-    public ResponseEntity<?> switchRole(@RequestBody Map<String, String> request) {
-        try {
-            String userIdStr = request.get("userId");
-            Long userId = Long.parseLong(userIdStr);
-            String newRole = request.get("role");
-
-            userService.switchRole(userId, newRole);
-
-            // Refresh user from database to ensure updated role is fetched
-            Map<String, Object> profile = userService.getFullProfile(userId);
-            profile.put("message", "Role switched successfully");
-
-            return ResponseEntity.ok(profile);
         } catch (Exception e) {
             e.printStackTrace();
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return ResponseEntity.badRequest().body(error);
+            return ResponseEntity.badRequest().body(Map.of("error", "Registration failed: " + e.getMessage()));
         }
     }
 
-    // Change password endpoint
-@PostMapping("/change-password")
-public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
-    try {
-        String userIdStr = request.get("userId");
-        Long userId = Long.parseLong(userIdStr);
-        String currentPassword = request.get("currentPassword");
-        String newPassword = request.get("newPassword");
-        
-        userService.changePassword(userId, currentPassword, newPassword);
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Password changed successfully");
-        
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage());
-        return ResponseEntity.badRequest().body(error);
+    // ---------------- LOGIN ----------------
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody Map<String, Object> payload) {
+        try {
+            String usernameOrEmail = (String) payload.get("username");
+            String password = (String) payload.get("password");
+
+            if (usernameOrEmail == null || password == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username/email and password are required"));
+            }
+
+            User user;
+
+            // Check if input contains '@' → treat as email
+            if (usernameOrEmail.contains("@")) {
+                user = userRepository.findByEmail(usernameOrEmail);
+            } else {
+                user = userRepository.findByUsername(usernameOrEmail);
+            }
+
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "User not found"));
+            }
+
+            // Check password (plain text for now; ideally use BCrypt)
+            if (!user.getPassword().equals(password)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Invalid password"));
+            }
+
+            // Prepare response
+            Map<String, Object> response = new HashMap<>();
+            response.put("user_id", user.getUser_id());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEmail());
+            response.put("phone_number", user.getPhone_number());
+            response.put("isCustomer", user.getCustomer() != null);
+            response.put("isSeller", user.getSeller() != null);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Login failed: " + e.getMessage()));
+        }
     }
-}
 }
