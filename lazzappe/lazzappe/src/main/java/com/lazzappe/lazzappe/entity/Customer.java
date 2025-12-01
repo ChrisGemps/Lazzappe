@@ -6,24 +6,37 @@ import jakarta.persistence.*;
 @Table(name = "customer")
 public class Customer {
 
-            @Id
-            @GeneratedValue(strategy = GenerationType.IDENTITY)
-            private Long customer_id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "customer_id")
+    private Long id;
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String shipping_address;
-    private String billing_address;
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Cart cart;
+
+    @Column(name = "shipping_address")
+    private String shippingAddress;
+
+    @Column(name = "billing_address")
+    private String billingAddress;
 
     // Getters and Setters
-    public Long getCustomer_id() { return customer_id; }
-    public void setCustomer_id(Long customer_id) { this.customer_id = customer_id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
-    public String getShipping_address() { return shipping_address; }
-    public void setShipping_address(String shipping_address) { this.shipping_address = shipping_address; }
-    public String getBilling_address() { return billing_address; }
-    public void setBilling_address(String billing_address) { this.billing_address = billing_address; }
+
+    public Cart getCart() { return cart; }
+    public void setCart(Cart cart) { this.cart = cart; }
+
+    public String getShippingAddress() { return shippingAddress; }
+    public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
+
+    public String getBillingAddress() { return billingAddress; }
+    public void setBillingAddress(String billingAddress) { this.billingAddress = billingAddress; }
 }

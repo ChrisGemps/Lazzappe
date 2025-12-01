@@ -6,49 +6,53 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "cart")
+@Table(name = "cart",
+       uniqueConstraints = @UniqueConstraint(columnNames = "customer_id")) // enforce 1:1 at DB level
 public class Cart {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long cart_id;
-    
+    @Column(name = "cart_id")
+    private Long id;
+
     @OneToOne
     @JoinColumn(name = "customer_id", nullable = false, unique = true)
     private Customer customer;
-    
-    private LocalDateTime created_at;
-    
-    private LocalDateTime updated_at;
-    
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<>();
-    
+
     // Constructors
     public Cart() {
-        this.created_at = LocalDateTime.now();
-        this.updated_at = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
-    
+
     public Cart(Customer customer) {
         this.customer = customer;
-        this.created_at = LocalDateTime.now();
-        this.updated_at = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
-    
+
     // Getters and Setters
-    public Long getCart_id() { return cart_id; }
-    public void setCart_id(Long cart_id) { this.cart_id = cart_id; }
-    
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public Customer getCustomer() { return customer; }
     public void setCustomer(Customer customer) { this.customer = customer; }
-    
-    public LocalDateTime getCreated_at() { return created_at; }
-    public void setCreated_at(LocalDateTime created_at) { this.created_at = created_at; }
-    
-    public LocalDateTime getUpdated_at() { return updated_at; }
-    public void setUpdated_at(LocalDateTime updated_at) { this.updated_at = updated_at; }
-    
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
     public List<CartItem> getCartItems() { return cartItems; }
     public void setCartItems(List<CartItem> cartItems) { this.cartItems = cartItems; }
 }

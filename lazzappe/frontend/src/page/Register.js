@@ -11,19 +11,30 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    phoneNumber: "",
     shippingAddress: "",
+    billingAddress: "",
+    registerAsSeller: false,
+    storeName: "",
+    storeDescription: "",
+    businessLicense: "",
   });
 
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm({ 
+      ...form, 
+      [name]: type === "checkbox" ? checked : value 
+    });
     setError("");
   };
 
   const validateForm = () => {
-    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword || !form.shippingAddress) {
-      setError("Please fill in all fields");
+    // Required fields for all users
+    if (!form.username.trim() || !form.email.trim() || !form.password || !form.confirmPassword || !form.shippingAddress.trim()) {
+      setError("Please fill in all required fields");
       return false;
     }
 
@@ -43,6 +54,14 @@ export default function Register() {
       return false;
     }
 
+    // Validate seller fields if registering as seller
+    if (form.registerAsSeller) {
+      if (!form.storeName.trim() || !form.storeDescription.trim()) {
+        setError("Please fill in all seller information fields");
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -54,20 +73,31 @@ export default function Register() {
     }
 
     try {
-      console.log("Sending request to backend:", form);
+      const registrationData = {
+        username: form.username,
+        email: form.email,
+        password: form.password,
+        phone_number: form.phoneNumber || null,
+        shipping_address: form.shippingAddress,
+        billing_address: form.billingAddress || form.shippingAddress,
+        register_as_seller: form.registerAsSeller,
+      };
+
+      // Add seller info if registering as seller
+      if (form.registerAsSeller) {
+        registrationData.store_name = form.storeName;
+        registrationData.store_description = form.storeDescription;
+        registrationData.business_license = form.businessLicense || null;
+      }
+
+      console.log("Sending request to backend:", registrationData);
 
       const response = await fetch("http://localhost:8080/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          username: form.username,
-          email: form.email,
-          password: form.password,
-          shipping_address: form.shippingAddress,
-
-        }),
+        body: JSON.stringify(registrationData),
       });
 
       if (!response.ok) {
@@ -76,10 +106,8 @@ export default function Register() {
       }
 
       const data = await response.json();
-
       console.log("Backend response:", data);
 
-      // After registering, redirect user to login page. Do not auto-login.
       alert("Registration Successful! Please sign in with your new account.");
       navigate("/login");
     } catch (error) {
@@ -111,7 +139,7 @@ export default function Register() {
 
           <Input
             type="text"
-            placeholder="Username"
+            placeholder="Username *"
             name="username"
             value={form.username}
             onChange={handleChange}
@@ -120,7 +148,7 @@ export default function Register() {
 
           <Input
             type="email"
-            placeholder="Email Address"
+            placeholder="Email Address *"
             name="email"
             value={form.email}
             onChange={handleChange}
@@ -129,7 +157,7 @@ export default function Register() {
 
           <Input
             type="password"
-            placeholder="Password"
+            placeholder="Password *"
             name="password"
             value={form.password}
             onChange={handleChange}
@@ -138,7 +166,7 @@ export default function Register() {
 
           <Input
             type="password"
-            placeholder="Confirm Password"
+            placeholder="Confirm Password *"
             name="confirmPassword"
             value={form.confirmPassword}
             onChange={handleChange}
@@ -146,13 +174,92 @@ export default function Register() {
           />
 
           <Input
+            type="tel"
+            placeholder="Phone Number (Optional)"
+            name="phoneNumber"
+            value={form.phoneNumber}
+            onChange={handleChange}
+            onKeyPress={handleKeyPress}
+          />
+
+          <Input
             type="text"
-            placeholder="Shipping Address"
+            placeholder="Shipping Address *"
             name="shippingAddress"
             value={form.shippingAddress}
             onChange={handleChange}
             onKeyPress={handleKeyPress}
           />
+
+          <Input
+            type="text"
+            placeholder="Billing Address (Optional - defaults to shipping)"
+            name="billingAddress"
+            value={form.billingAddress}
+            onChange={handleChange}
+            onKeyPress={handleKeyPress}
+          />
+
+          <div className="seller-checkbox-container" style={{ marginTop: '15px', marginBottom: '15px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                name="registerAsSeller"
+                checked={form.registerAsSeller}
+                onChange={handleChange}
+                style={{ marginRight: '8px', cursor: 'pointer' }}
+              />
+              <span>Register as a Seller</span>
+            </label>
+          </div>
+
+          {form.registerAsSeller && (
+            <div className="seller-fields" style={{ 
+              border: '1px solid #e0e0e0', 
+              padding: '15px', 
+              borderRadius: '8px', 
+              marginBottom: '15px',
+              backgroundColor: '#f9f9f9'
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: '10px', fontSize: '16px' }}>Seller Information</h3>
+              
+              <Input
+                type="text"
+                placeholder="Store Name *"
+                name="storeName"
+                value={form.storeName}
+                onChange={handleChange}
+                onKeyPress={handleKeyPress}
+              />
+
+              <textarea
+                placeholder="Store Description *"
+                name="storeDescription"
+                value={form.storeDescription}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  minHeight: '80px',
+                  padding: '10px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  marginBottom: '10px'
+                }}
+              />
+
+              <Input
+                type="text"
+                placeholder="Business License (Optional)"
+                name="businessLicense"
+                value={form.businessLicense}
+                onChange={handleChange}
+                onKeyPress={handleKeyPress}
+              />
+            </div>
+          )}
 
           <Button text="Register" onClick={handleRegister} />
 
