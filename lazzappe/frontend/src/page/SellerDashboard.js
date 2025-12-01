@@ -10,6 +10,7 @@ export default function SellerDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [userRole, setUserRole] = useState('');
+  const [sellerId, setSellerId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,14 +47,20 @@ export default function SellerDashboard() {
         const profileData = await response.json();
         setUserRole(profileData.role);
 
+        // store seller id if available
+        if (profileData.seller_id) {
+          setSellerId(profileData.seller_id);
+        }
+
         if (profileData.role !== 'SELLER' && profileData.role !== 'BOTH') {
           alert('Access denied. You need a Seller account to access this page. Please switch to Seller role in your profile.');
           navigate('/profile');
           return;
         }
 
-        // User has seller access, fetch products
-        fetchProducts(userId);
+        // User has seller access, fetch products using seller entity id when available
+        const idToUse = profileData.seller_id || userId;
+        fetchProducts(idToUse);
       } else {
         throw new Error('Failed to verify user role');
       }
@@ -97,6 +104,7 @@ export default function SellerDashboard() {
       const userStr = localStorage.getItem('user');
       const user = JSON.parse(userStr);
       const userId = user.id || user.user_id;
+      const idToSend = sellerId || userId;
 
       const url = editingProduct
         ? `http://localhost:8080/api/products/${editingProduct.product_id}`
@@ -111,7 +119,7 @@ export default function SellerDashboard() {
         },
         body: JSON.stringify({
           ...formData,
-          seller_id: userId,
+          seller_id: idToSend,
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock)
         })
