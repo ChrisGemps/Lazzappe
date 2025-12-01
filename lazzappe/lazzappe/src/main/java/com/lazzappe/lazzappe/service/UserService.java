@@ -83,6 +83,7 @@ public class UserService {
             custOpt.ifPresent(c -> {
                 profile.put("shipping_address", c.getShipping_address());
                 profile.put("billing_address", c.getBilling_address());
+                profile.put("customer_id", c.getCustomer_id());
             });
         }
 
@@ -93,6 +94,7 @@ public class UserService {
                 profile.put("store_name", s.getStore_name());
                 profile.put("store_description", s.getStore_description());
                 profile.put("business_license", s.getBusiness_license());
+                profile.put("seller_id", s.getSeller_id());
             });
         }
 

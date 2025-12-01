@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -25,7 +26,8 @@ public class ProductController {
     public ResponseEntity<?> getAllProducts() {
         try {
             List<Product> products = productService.getAllProducts();
-            return ResponseEntity.ok(products);
+            List<Map<String, Object>> dto = products.stream().map(this::toDto).collect(Collectors.toList());
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -38,7 +40,8 @@ public class ProductController {
     public ResponseEntity<?> getProductsBySeller(@PathVariable Long sellerId) {
         try {
             List<Product> products = productService.getProductsBySeller(sellerId);
-            return ResponseEntity.ok(products);
+            List<Map<String, Object>> dto = products.stream().map(this::toDto).collect(Collectors.toList());
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -50,7 +53,9 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<?> getProductById(@PathVariable Long productId) {
         try {
-            return ResponseEntity.ok(productService.getProductById(productId));
+            return productService.getProductById(productId)
+                    .map(p -> ResponseEntity.ok(toDto(p)))
+                    .orElseGet(() -> ResponseEntity.badRequest().body(Map.of("error", "Product not found")));
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -65,7 +70,7 @@ public class ProductController {
             Product product = productService.createProduct(productData);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Product created successfully");
-            response.put("product", product);
+            response.put("product", toDto(product));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -81,7 +86,7 @@ public class ProductController {
             Product product = productService.updateProduct(productId, productData);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Product updated successfully");
-            response.put("product", product);
+            response.put("product", toDto(product));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
@@ -116,7 +121,8 @@ public class ProductController {
     public ResponseEntity<?> searchProducts(@RequestParam String query) {
         try {
             List<Product> products = productService.searchProducts(query);
-            return ResponseEntity.ok(products);
+            List<Map<String, Object>> dto = products.stream().map(this::toDto).collect(Collectors.toList());
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -129,11 +135,34 @@ public class ProductController {
     public ResponseEntity<?> getProductsByCategory(@PathVariable String category) {
         try {
             List<Product> products = productService.getProductsByCategory(category);
-            return ResponseEntity.ok(products);
+            List<Map<String, Object>> dto = products.stream().map(this::toDto).collect(Collectors.toList());
+            return ResponseEntity.ok(dto);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
+    }
+
+    // Convert Product entity to a safe DTO (avoid circular references)
+    private Map<String, Object> toDto(Product p) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("product_id", p.getProduct_id());
+        m.put("name", p.getName());
+        m.put("description", p.getDescription());
+        m.put("price", p.getPrice() != null ? p.getPrice().toString() : null);
+        m.put("stock", p.getStock());
+        m.put("image_url", p.getImage_url());
+        m.put("category", p.getCategory());
+        m.put("created_at", p.getCreated_at() != null ? p.getCreated_at().toString() : null);
+        if (p.getSeller() != null) {
+            Map<String, Object> seller = new HashMap<>();
+            seller.put("seller_id", p.getSeller().getSeller_id());
+            seller.put("store_name", p.getSeller().getStore_name());
+            m.put("seller", seller);
+        } else {
+            m.put("seller", null);
+        }
+        return m;
     }
 }

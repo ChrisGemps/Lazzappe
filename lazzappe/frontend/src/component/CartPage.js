@@ -11,15 +11,25 @@ const CartPage = () => {
   const navigate = useNavigate();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
 
-  const updateQuantity = (id, change) => {
-    const item = cartItems.find(i => i.id === id);
-    if (!item) return;
-    const newQty = Math.max(1, (item.qty || item.quantity || 1) + change);
-    updateQty(id, newQty);
+  const updateQuantity = async (id, change) => {
+    try {
+      const item = cartItems.find(i => i.id === id);
+      if (!item) return;
+      const newQty = Math.max(1, (item.qty || item.quantity || 1) + change);
+      await updateQty(id, newQty);
+    } catch (err) {
+      console.error('Failed to update quantity', err);
+      alert('Failed to update quantity. Please try again.');
+    }
   };
 
-  const removeItem = (id) => {
-    removeFromCart(id);
+  const removeItem = async (id) => {
+    try {
+      await removeFromCart(id);
+    } catch (err) {
+      console.error('Failed to remove item', err);
+      alert('Failed to remove item. Please try again.');
+    }
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.qty || item.quantity || 1), 0);
@@ -113,7 +123,7 @@ const CartPage = () => {
           <div className="cart-grid">
             <div className="cart-items">
               {cartItems.map(item => (
-                <div key={item.id} className="cart-item">
+                <div key={item.cartItemId || item.id} className="cart-item">
                   <div className="cart-item-content">
                     <img src={item.image} alt={item.name} className="cart-item-image" />
                     <div className="cart-item-details">
@@ -122,7 +132,7 @@ const CartPage = () => {
                       <div className="cart-item-actions">
                         <div className="quantity-control">
                           <button onClick={() => updateQuantity(item.id, -1)} className="quantity-btn">−</button>
-                          <span className="quantity-value">{item.qty || item.quantity}</span>
+                          <span className="quantity-value">{item.qty || item.quantity || 1}</span>
                           <button onClick={() => updateQuantity(item.id, 1)} className="quantity-btn">+</button>
                         </div>
                         <button onClick={() => removeItem(item.id)} className="remove-btn" aria-label={`Remove ${item.name}`}>
