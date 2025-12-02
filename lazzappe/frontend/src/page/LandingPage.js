@@ -6,18 +6,14 @@ import "../css/Dashboard/LandingPage.css";
 
 export default function LazzappeeLandingPage() {
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
   
   const handleLogin = () => {
-    setOpen(true);
+    navigate("/login");
   };
 
   const handleShopNow = () => {
     navigate("/dashboard");
   };
-
-  
-
   const handleSignup = () => {
     navigate("/register");
   };
@@ -31,7 +27,6 @@ export default function LazzappeeLandingPage() {
           <a href="#about" className="lz-nav-link">ABOUT US</a>
           <>
             <button className="lz-nav-link" onClick={handleLogin}>LOGIN</button>
-            <LoginModal open={open} onClose={() => setOpen(false)} />
           </>
           <a href="#contact" className="lz-nav-link" onClick={handleSignup}>SIGNUP</a>
         </nav>
