@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginToast, setLoginToast] = useState({ show: false, message: '' });
   const { clearCart, itemCount } = useCart();
+  const [message, setMessage] = useState("");
   
 
   useEffect(() => {
@@ -101,6 +102,32 @@ export default function Dashboard() {
     navigate('/');
   };
 
+
+  const handleClick = () => {
+  const storedUser = localStorage.getItem("user");
+  if (!storedUser) {
+    alert("Please log in first.");
+    return;
+  }
+
+  let user;
+  try {
+    user = JSON.parse(storedUser);
+  } catch {
+    alert("Login data corrupted. Please log in again.");
+    return;
+  }
+
+  if (user?.isSeller) {
+    navigate("/seller-dashboard");
+  } else {
+    alert("This user is not registered as Seller");
+  }
+};
+
+
+
+
   return (
     <>
       <nav className="navbar">
@@ -112,7 +139,13 @@ export default function Dashboard() {
         <div className="centerItems">
           <div className="navbar-top">
             <div className="navbar-top-left">
-              <Link to="/seller-dashboard" className="nav-link">Seller Centre</Link>
+              <span
+                className="nav-link"
+                style={{ cursor: 'pointer' }}
+                onClick={handleClick}
+              >
+                Seller Centre
+              </span>
               <a href="#" className="nav-link">Sell on Lazzappee</a>
               <span>Follow us on ⓕ 𝕏 📸【ꚠ】</span>
             </div>
