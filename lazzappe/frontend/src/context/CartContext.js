@@ -25,6 +25,18 @@ export function CartProvider({ children }) {
 
   const addToCart = async (product) => {
     const userId = getUserId();
+    // Prevent sellers (role === 'SELLER') from adding items to cart
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      const role = user?.role || '';
+      if (role === 'SELLER') {
+        // frontend should notify user; here we just return false indicating failure
+        return false;
+      }
+    } catch (e) {
+      // ignore parsing errors and proceed
+    }
     if (!userId) {
       // fallback to localStorage for guest
       let mapped;
@@ -43,13 +55,33 @@ export function CartProvider({ children }) {
     }
 
     try {
+      // Prevent adding own product to cart: if product.raw.seller.user (id) === current user
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          const currUserId = user?.id || user?.user_id || user?.userId;
+          const sellerUserId = product?.raw?.seller_user_id || product?.raw?.seller?.user?.user_id || product?.raw?.seller?.user?.id || product?.raw?.seller?.user?.userId || product?.raw?.seller?.userId || null;
+          if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) {
+            // Block adding own product to cart
+            return false;
+          }
+        }
+      } catch (err) {}
+
       const res = await fetch('http://localhost:8080/api/cart/add', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: String(userId), productId: product.id, quantity: 1 })
       });
       if (!res.ok) {
-        console.error('Add to cart failed: non-ok response', res.status);
-        return false;
+        // try reading server error message
+        let errMsg = 'Add to cart failed';
+        try {
+          const errBody = await res.json();
+          if (errBody && (errBody.error || errBody.message)) errMsg = errBody.error || errBody.message;
+        } catch (e) { }
+        console.error('Add to cart failed: non-ok response', res.status, errMsg);
+        return { ok: false, message: errMsg };
       }
       const data = await res.json();
       const item = data.item || data; // controller returns {message,item}
@@ -71,10 +103,10 @@ export function CartProvider({ children }) {
         }
         return [...prev, mapped];
       });
-      return mapped;
+      return { ok: true, item: mapped };
     } catch (err) {
       console.error('Add to cart failed:', err);
-      return false;
+      return { ok: false, message: err?.message || 'Add to cart failed' };
     }
   };
 

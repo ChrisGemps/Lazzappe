@@ -68,3 +68,17 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Troubleshooting: "Failed to fetch" Errors
+
+- If you see a "Failed to fetch" error in the browser when the app tries to load data, it usually indicates the frontend cannot reach the backend API (CORS issues, backend not running, wrong port).
+- Make sure the backend is running on port 8080 (or update the API base URL).
+- You can configure the frontend to point to the backend by creating a `.env` file at the root of this `frontend` folder with the value:
+
+```
+REACT_APP_API_URL=http://localhost:8080
+```
+
+- CORS: The backend enables CORS for `http://localhost:3000` by default; if your dev server runs elsewhere, update the backend CORS rules in `lazzappe/src/main/java/com/lazzappe/lazzappe/config/SecurityConfig.java`.
+- If you still see issues, open the browser console and check the network tab for the failing request. If the status is `CORS` or `blocked`, confirm the backend allows the origin.
+

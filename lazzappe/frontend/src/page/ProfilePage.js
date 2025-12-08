@@ -4,6 +4,7 @@ import '../css/Dashboard/ProfilePage.css';
 import NavBarComponent from "../component/Dashboard/NavBarComponent";
 
 export default function ProfilePage() {
+  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -47,9 +48,10 @@ export default function ProfilePage() {
         return;
       }
 
-      const response = await fetch('http://localhost:8080/api/auth/profile', {
+      const response = await fetch(`${API_BASE}/api/auth/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
         body: JSON.stringify({ userId: String(userId) })
       });
 
@@ -66,7 +68,7 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, API_BASE]);
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
@@ -75,9 +77,10 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8080/api/auth/update-profile', {
+      const response = await fetch(`${API_BASE}/api/auth/update-profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
         body: JSON.stringify({
           userId: String(editedProfile.user_id),
           username: editedProfile.username,
@@ -135,8 +138,9 @@ export default function ProfilePage() {
     if (newPassword.length < 6) { alert('Password must be at least 6 characters long'); return; }
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/change-password', {
+      const response = await fetch(`${API_BASE}/api/auth/change-password`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
         body: JSON.stringify({ userId: String(profile.user_id), currentPassword, newPassword })
       });
       if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Failed to change password'); }
@@ -151,8 +155,9 @@ export default function ProfilePage() {
 
     try {
       setRoleSwitching(true);
-      const response = await fetch('http://localhost:8080/api/auth/switch-role', {
+      const response = await fetch(`${API_BASE}/api/auth/switch-role`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
         body: JSON.stringify({ userId: String(profile.user_id), role: newRole })
       });
 
@@ -166,6 +171,10 @@ export default function ProfilePage() {
         setEditedProfile(prev => ({ ...prev, ...data }));
       }
       const userStr = localStorage.getItem('user'); if (userStr) { const user = JSON.parse(userStr); user.role = data.role; localStorage.setItem('user', JSON.stringify(user)); }
+      // Notify other parts of the app that products may have changed (the server may remove products when switching role)
+      try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed', { detail: { userId: profile.user_id } })); } catch (e) {}
+      // Also re-load the cart (if any) by signaling username change
+      try { window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: data.username })); } catch (e) {}
       alert(`Role switched to ${data.role} successfully!`);
     } catch (err) { console.error('Error switching role:', err); alert(err.message || 'Failed to switch role. Please try again.'); }
     finally { setRoleSwitching(false); }
