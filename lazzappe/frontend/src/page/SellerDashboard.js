@@ -21,55 +21,56 @@ export default function SellerDashboard() {
     image_url: ''
   });
 
-  
-    const checkSellerAccess = useCallback(async () => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      alert('Please log in to access Seller Dashboard');
-      navigate('/login');
-      return;
-    }
+  // useEffect(() => {
+  //   checkSellerAccess();
+  // }, []);
+
+  // const checkSellerAccess = async () => {
+  //   const userStr = localStorage.getItem('user');
+  //   if (!userStr) {
+  //     alert('Please log in to access Seller Dashboard');
+  //     navigate('/login');
+  //     return;
+  //   }
     
-    try {
-      const user = JSON.parse(userStr);
-      const userId = user.id || user.user_id;
+  //   try {
+  //     const user = JSON.parse(userStr);
+  //     const userId = user.id || user.user_id;
 
-      // Fetch fresh profile data to get current role
-      const response = await fetch('http://localhost:8080/api/auth/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: String(userId) })
-      });
+  //     // Fetch fresh profile data to get current role
+  //     const response = await fetch('http://localhost:8080/api/auth/profile', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ userId: String(userId) })
+  //     });
 
-      if (response.ok) {
-        const profileData = await response.json();
-        setUserRole(profileData.role);
+  //     if (response.ok) {
+  //       const profileData = await response.json();
+  //       setUserRole(profileData.role);
 
-        // store seller id if available
-        if (profileData.seller_id) {
-          setSellerId(profileData.seller_id);
-        }
+  //       // store seller id if available
+  //       if (profileData.seller_id) {
+  //         setSellerId(profileData.seller_id);
+  //       }
 
-        if (profileData.role !== 'SELLER' && profileData.role !== 'BOTH') {
-          alert('Access denied. You need a Seller account to access this page. Please switch to Seller role in your profile.');
-          navigate('/profile');
-          return;
-        }
+  //       if (profileData.role !== 'SELLER' && profileData.role !== 'BOTH') {
+  //         alert('Access denied. You need a Seller account to access this page. Please switch to Seller role in your profile.');
+  //         navigate('/profile');
+  //         return;
+  //       }
 
-        // User has seller access, fetch products using seller entity id when available
-        const idToUse = profileData.seller_id || userId;
-        fetchProducts(idToUse);
-      } else {
-        throw new Error('Failed to verify user role');
-      }
-    } catch (error) {
-      console.error('Error checking seller access:', error);
-      alert('Failed to verify seller access. Please try again.');
-      navigate('/dashboard');
-    }
-  }, [navigate]);
-  
-    useEffect(() => { checkSellerAccess(); }, [checkSellerAccess]);
+  //       // User has seller access, fetch products using seller entity id when available
+  //       const idToUse = profileData.seller_id || userId;
+  //       fetchProducts(idToUse);
+  //     } else {
+  //       throw new Error('Failed to verify user role');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error checking seller access:', error);
+  //     alert('Failed to verify seller access. Please try again.');
+  //     navigate('/dashboard');
+  //   }
+  // };
 
   const fetchProducts = async (userId) => {
     try {
