@@ -104,26 +104,27 @@ export default function Dashboard() {
 
 
   const handleClick = () => {
-  const storedUser = localStorage.getItem("user");
-  if (!storedUser) {
-    alert("Please log in first.");
-    return;
-  }
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      alert("Please log in first.");
+      return;
+    }
 
-  let user;
-  try {
-    user = JSON.parse(storedUser);
-  } catch {
-    alert("Login data corrupted. Please log in again.");
-    return;
-  }
+    let user;
+    try {
+      user = JSON.parse(storedUser);
+    } catch {
+      alert("Login data corrupted. Please log in again.");
+      return;
+    }
 
-  if (user?.isSeller) {
-    navigate("/seller-dashboard");
-  } else {
-    alert("This user is not registered as Seller");
-  }
-};
+    // Check if user has seller role
+    if (user?.role === 'SELLER' || user?.isSeller) {
+      navigate("/seller-dashboard");
+    } else {
+      alert("This user is not registered as Seller. Please switch to Seller role in your profile.");
+    }
+  };
 
 
 

@@ -88,18 +88,76 @@ const CartPage = () => {
   const taxAfterDiscount = discountedSubtotal * 0.1;
   const grandTotal = Math.max(0, discountedSubtotal + taxAfterDiscount + shippingAfterVoucher);
 
-  // Show login modal if no user is currently logged in
+  // Show login modal if no user is currently logged in, and verify customer role for logged-in users
   useEffect(() => {
-    const username = localStorage.getItem('username') || null;
-    if (!username) {
-      setLoginModalOpen(true);
-    }
-  }, []);
+    const checkUserStatus = async () => {
+      const username = localStorage.getItem('username') || null;
+      if (!username) {
+        setLoginModalOpen(true);
+        return;
+      }
 
-  // Close login modal if user logs in (same tab or other tabs)
+      // Check if logged-in user is in seller role (which shouldn't be buying)
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          const userId = user.id || user.user_id;
+
+          const response = await fetch('http://localhost:8080/api/auth/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: String(userId) })
+          });
+
+          if (response.ok) {
+            const profileData = await response.json();
+            // If user is SELLER only, redirect them
+            if (profileData.role === 'SELLER') {
+              alert('Sellers cannot purchase items. Please switch to Customer role in your profile to use the cart.');
+              navigate('/profile');
+            }
+          }
+        } catch (error) {
+          console.error('Error verifying customer role:', error);
+        }
+      }
+    };
+
+    checkUserStatus();
+  }, [navigate]);
+
+  // Close login modal if user logs in (same tab or other tabs), and re-check role on username change
   useEffect(() => {
     const handler = () => {
-      if (localStorage.getItem('username')) setLoginModalOpen(false);
+      if (localStorage.getItem('username')) {
+        setLoginModalOpen(false);
+        // Re-check user role when username changes (happens after role switch)
+        const checkRole = async () => {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            try {
+              const user = JSON.parse(userStr);
+              const userId = user.id || user.user_id;
+              const response = await fetch('http://localhost:8080/api/auth/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: String(userId) })
+              });
+              if (response.ok) {
+                const profileData = await response.json();
+                if (profileData.role === 'SELLER') {
+                  alert('Sellers cannot purchase items. Please switch to Customer role in your profile to use the cart.');
+                  navigate('/profile');
+                }
+              }
+            } catch (error) {
+              console.error('Error re-checking role:', error);
+            }
+          }
+        };
+        checkRole();
+      }
     };
     window.addEventListener('storage', handler);
     window.addEventListener('lazzappe:username-changed', handler);
@@ -107,7 +165,7 @@ const CartPage = () => {
       window.removeEventListener('storage', handler);
       window.removeEventListener('lazzappe:username-changed', handler);
     };
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="cart-page-root">

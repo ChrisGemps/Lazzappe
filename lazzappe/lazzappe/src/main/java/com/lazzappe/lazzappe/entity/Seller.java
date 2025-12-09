@@ -14,7 +14,7 @@ public class Seller {
     private Long id;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JoinColumn(name = "user_id", nullable = true, unique = false)
     private User user;
 
     @Column(name = "store_name")

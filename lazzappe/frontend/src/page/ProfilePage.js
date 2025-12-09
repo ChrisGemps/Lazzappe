@@ -155,29 +155,53 @@ export default function ProfilePage() {
 
     try {
       setRoleSwitching(true);
+      console.log(`[RoleSwitch] Starting role switch to ${newRole} for user ${profile.user_id}`);
+      
       const response = await fetch(`${API_BASE}/api/auth/switch-role`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
         body: JSON.stringify({ userId: String(profile.user_id), role: newRole })
       });
 
-      if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Failed to switch role'); }
-      const data = await response.json();
-      // server returns full profile; re-fetch to ensure latest persisted values
-      try {
-        await fetchProfile();
-      } catch (e) {
-        setProfile(data);
-        setEditedProfile(prev => ({ ...prev, ...data }));
+      if (!response.ok) { 
+        const errorData = await response.json(); 
+        console.error('[RoleSwitch] Server error:', errorData);
+        throw new Error(errorData.error || 'Failed to switch role'); 
       }
-      const userStr = localStorage.getItem('user'); if (userStr) { const user = JSON.parse(userStr); user.role = data.role; localStorage.setItem('user', JSON.stringify(user)); }
-      // Notify other parts of the app that products may have changed (the server may remove products when switching role)
+      
+      const data = await response.json();
+      console.log('[RoleSwitch] Response received:', data);
+      
+      // Update profile immediately with response data
+      const updatedProfile = { ...profile, ...data, role: data.role };
+      setProfile(updatedProfile);
+      setEditedProfile(updatedProfile);
+      
+      console.log('[RoleSwitch] Profile updated to role:', data.role);
+      
+      // Update localStorage with new role
+      const userStr = localStorage.getItem('user'); 
+      if (userStr) { 
+        const user = JSON.parse(userStr); 
+        user.role = data.role;
+        user.seller_id = data.seller_id || null;
+        localStorage.setItem('user', JSON.stringify(user)); 
+        console.log('[RoleSwitch] LocalStorage updated:', user);
+      }
+      
+      // Notify other parts of the app that products may have changed
       try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed', { detail: { userId: profile.user_id } })); } catch (e) {}
-      // Also re-load the cart (if any) by signaling username change
+      // Also re-load the cart by signaling username change
       try { window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: data.username })); } catch (e) {}
+      
+      console.log('[RoleSwitch] Role switch completed successfully');
       alert(`Role switched to ${data.role} successfully!`);
-    } catch (err) { console.error('Error switching role:', err); alert(err.message || 'Failed to switch role. Please try again.'); }
-    finally { setRoleSwitching(false); }
+    } catch (err) { 
+      console.error('[RoleSwitch] Error switching role:', err); 
+      alert(err.message || 'Failed to switch role. Please try again.'); 
+    } finally { 
+      setRoleSwitching(false); 
+    }
   };
 
   if (loading && !profile.user_id) return (<><NavBarComponent /><div className="profile-container"><div className="profile-wrapper"><div className="loading-message">Loading profile...</div></div></div></>);

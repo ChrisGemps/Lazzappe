@@ -21,56 +21,57 @@ export default function SellerDashboard() {
     image_url: ''
   });
 
-  // useEffect(() => {
-  //   checkSellerAccess();
-  // }, []);
+  useEffect(() => {
+    loadSellerData();
+  }, []);
 
-  // const checkSellerAccess = async () => {
-  //   const userStr = localStorage.getItem('user');
-  //   if (!userStr) {
-  //     alert('Please log in to access Seller Dashboard');
-  //     navigate('/login');
-  //     return;
-  //   }
+  const loadSellerData = async () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      alert('Please log in to access Seller Dashboard');
+      navigate('/login');
+      return;
+    }
     
-  //   try {
-  //     const user = JSON.parse(userStr);
-  //     const userId = user.id || user.user_id;
+    try {
+      const user = JSON.parse(userStr);
+      const userId = user.id || user.user_id;
 
-  //     // Fetch fresh profile data to get current role
-  //     const response = await fetch('http://localhost:8080/api/auth/profile', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ userId: String(userId) })
-  //     });
+      // Fetch fresh profile data to get current role
+      const response = await fetch('http://localhost:8080/api/auth/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: String(userId) })
+      });
 
-  //     if (response.ok) {
-  //       const profileData = await response.json();
-  //       setUserRole(profileData.role);
+      if (response.ok) {
+        const profileData = await response.json();
+        setUserRole(profileData.role);
 
-  //       // store seller id if available
-  //       if (profileData.seller_id) {
-  //         setSellerId(profileData.seller_id);
-  //       }
+        // store seller id if available
+        if (profileData.seller_id) {
+          setSellerId(profileData.seller_id);
+        }
 
-  //       if (profileData.role !== 'SELLER' && profileData.role !== 'BOTH') {
-  //         alert('Access denied. You need a Seller account to access this page. Please switch to Seller role in your profile.');
-  //         navigate('/profile');
-  //         return;
-  //       }
+        // Only SELLER role can access this page
+        if (profileData.role !== 'SELLER') {
+          alert('Access denied. Only sellers can access this page. Please switch to Seller role in your profile.');
+          navigate('/profile');
+          return;
+        }
 
-  //       // User has seller access, fetch products using seller entity id when available
-  //       const idToUse = profileData.seller_id || userId;
-  //       fetchProducts(idToUse);
-  //     } else {
-  //       throw new Error('Failed to verify user role');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error checking seller access:', error);
-  //     alert('Failed to verify seller access. Please try again.');
-  //     navigate('/dashboard');
-  //   }
-  // };
+        // User has seller access, fetch products using seller entity id when available
+        const idToUse = profileData.seller_id || userId;
+        fetchProducts(idToUse);
+      } else {
+        throw new Error('Failed to verify user role');
+      }
+    } catch (error) {
+      console.error('Error checking seller access:', error);
+      alert('Failed to verify seller access. Please try again.');
+      navigate('/dashboard');
+    }
+  };
 
   const fetchProducts = async (userId) => {
     try {
@@ -131,7 +132,7 @@ export default function SellerDashboard() {
         setShowModal(false);
         setEditingProduct(null);
         resetForm();
-        fetchProducts(userId);
+        fetchProducts(idToSend);
         // notify global listeners (e.g., products list) that products changed
         try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed')); } catch (e) {}
       } else {
@@ -172,10 +173,7 @@ export default function SellerDashboard() {
 
       if (response.ok) {
         alert('Product deleted successfully!');
-        const userStr = localStorage.getItem('user');
-        const user = JSON.parse(userStr);
-        const userId = user.id || user.user_id;
-        fetchProducts(userId);
+        fetchProducts(sellerId);
         try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed')); } catch (e) {}
       } else {
         alert('Failed to delete product');

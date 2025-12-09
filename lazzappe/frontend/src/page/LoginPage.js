@@ -81,6 +81,8 @@ const LoginForm = () => {
           phone_number: data.phone_number || data.user?.phone_number || null,
           isSeller: data.isSeller === true || data.user?.isSeller === true || false,
           isCustomer: data.isCustomer === true || data.user?.isCustomer === true || false,
+          role: data.role || data.user?.role || (data.isSeller ? 'SELLER' : 'CUSTOMER'),
+          seller_id: data.seller_id || data.user?.seller_id || null
         };
 
         localStorage.setItem("user", JSON.stringify(userToStore));
