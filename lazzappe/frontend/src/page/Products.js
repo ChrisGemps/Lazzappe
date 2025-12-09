@@ -81,10 +81,11 @@ export default function Products() {
     return arr.slice().sort((a, b) => a.name.localeCompare(b.name));
   }, [products, category]);
 
-  return (
-    
+  return (<>
+  
+    <NavBarComponent showCategories={false} />
     <div className="products-wrapper">
-      <NavBarComponent showCategories={false} />
+      
       <div>
   <ul>&nbsp;</ul>
 </div>
@@ -221,5 +222,5 @@ export default function Products() {
         <div className={`products-toast ${toast.type === 'error' ? 'error' : ''}`}>{toast.message}</div>
       )}
     </div>
-  );
+  </>);
 }

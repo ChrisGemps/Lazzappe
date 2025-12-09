@@ -8,6 +8,7 @@ import CartPage from "./component/CartPage";
 import ProductsPage from "./page/Products";
 import ProfilePage from "./page/ProfilePage";
 import SellerDashboardPage from "./page/SellerDashboard";
+import ManageOrders from "./page/ManageOrders";
 
 function App() {
   useEffect(() => {
@@ -65,6 +66,7 @@ function App() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/profile" element={<ProfilePage/>}/>
         <Route path="/seller-dashboard" element={<SellerDashboardPage/>}/>
+        <Route path="/seller-orders" element={<ManageOrders/>}/>
       </Routes>
     </BrowserRouter>
   );
