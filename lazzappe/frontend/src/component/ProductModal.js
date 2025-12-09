@@ -13,6 +13,20 @@ export default function ProductModal({ product, onClose, onAdd }) {
     }
   };
 
+  const canAdd = (() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return true;
+    try {
+      const user = JSON.parse(userStr);
+      const role = user?.role || '';
+      if (role === 'SELLER') return false;
+      const currUserId = user?.id || user?.user_id || user?.userId;
+      const sellerUserId = product?.raw?.seller_user_id || product?.raw?.seller?.user?.user_id || product?.raw?.seller?.user?.id || product?.raw?.seller?.user?.userId || product?.raw?.seller?.userId || null;
+      if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) return false;
+      return true;
+    } catch (err) { return true; }
+  })();
+
   const handleBuy = async () => {
     try {
       const ok = await handleAdd();
@@ -33,7 +47,7 @@ export default function ProductModal({ product, onClose, onAdd }) {
             <p style={{color:'#666'}}>{product.description || 'No description available.'}</p>
             <div style={{fontWeight:700, marginTop:8}}>₱{product.price?.toFixed(2) ?? '0.00'}</div>
             <div style={{marginTop:12, display:'flex', gap:8}}>
-              <button className="btn btn-secondary" onClick={handleAdd}>Add to cart</button>
+              <button className="btn btn-secondary" onClick={handleAdd} disabled={!canAdd} title={!canAdd ? 'You cannot add this product to your cart' : 'Add to cart'}>Add to cart</button>
               <button className="btn btn-primary" onClick={handleBuy}>Buy now</button>
             </div>
           </div>

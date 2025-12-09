@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import categories from '../constants/categories';
 import { useNavigate } from 'react-router-dom';
 import '../css/Dashboard/SellerDashboard.css';
 import NavBarComponent from "../component/Dashboard/NavBarComponent";
@@ -131,6 +132,8 @@ export default function SellerDashboard() {
         setEditingProduct(null);
         resetForm();
         fetchProducts(userId);
+        // notify global listeners (e.g., products list) that products changed
+        try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed')); } catch (e) {}
       } else {
         const error = await response.json();
         alert(error.error || error.message || 'Failed to save product');
@@ -173,6 +176,7 @@ export default function SellerDashboard() {
         const user = JSON.parse(userStr);
         const userId = user.id || user.user_id;
         fetchProducts(userId);
+        try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed')); } catch (e) {}
       } else {
         alert('Failed to delete product');
       }
@@ -378,6 +382,7 @@ export default function SellerDashboard() {
                 <div className="form-group">
                   <label>Category *</label>
                   <input
+                    list="categoryList"
                     type="text"
                     name="category"
                     value={formData.category}
@@ -385,6 +390,11 @@ export default function SellerDashboard() {
                     required
                     placeholder="e.g. Electronics, Clothing, Home"
                   />
+                  <datalist id="categoryList">
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.label} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="form-group">
