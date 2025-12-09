@@ -21,12 +21,15 @@ public class User {
 
     private String phone_number;
 
+    @Column(name = "current_role")
+    private String currentRole; // "SELLER" or "CUSTOMER" - tracks the user's active role without deleting relationships
+
     // Remove role string, we can determine role from linked entities
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
     private Customer customer;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.PERSIST)
     private Seller seller; // optional
 
     // Getters and Setters
@@ -50,4 +53,7 @@ public class User {
 
     public Seller getSeller() { return seller; }
     public void setSeller(Seller seller) { this.seller = seller; }
+
+    public String getCurrentRole() { return currentRole; }
+    public void setCurrentRole(String currentRole) { this.currentRole = currentRole; }
 }

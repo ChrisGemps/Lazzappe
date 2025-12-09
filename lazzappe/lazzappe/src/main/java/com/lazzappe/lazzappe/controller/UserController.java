@@ -5,7 +5,6 @@ import com.lazzappe.lazzappe.entity.Seller;
 import com.lazzappe.lazzappe.entity.User;
 import com.lazzappe.lazzappe.repository.CustomerRepository;
 import com.lazzappe.lazzappe.repository.SellerRepository;
-import com.lazzappe.lazzappe.repository.ProductRepository;
 import com.lazzappe.lazzappe.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +27,6 @@ public class UserController {
 
     @Autowired
     private SellerRepository sellerRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
 
     // ---------------- REGISTER ----------------
     @PostMapping("/register")
@@ -59,6 +55,8 @@ public class UserController {
             user.setEmail(email);
             user.setPassword(password); // TODO: Encode password with BCryptPasswordEncoder
             user.setPhone_number(phoneNumber);
+            // default active role is CUSTOMER on register
+            user.setCurrentRole("CUSTOMER");
 
             userRepository.save(user);
 
@@ -124,7 +122,7 @@ public class UserController {
                 return ResponseEntity.status(401).body(Map.of("error", "Invalid password"));
             }
 
-            // Prepare response
+            // Prepare response (use currentRole if present, otherwise infer from linked entities)
             Map<String, Object> response = new HashMap<>();
             response.put("user_id", user.getUser_id());
             response.put("username", user.getUsername());
@@ -132,6 +130,11 @@ public class UserController {
             response.put("phone_number", user.getPhone_number());
             response.put("isCustomer", user.getCustomer() != null);
             response.put("isSeller", user.getSeller() != null);
+            String role = (user.getCurrentRole() != null) ? user.getCurrentRole() : (user.getSeller() != null ? "SELLER" : "CUSTOMER");
+            response.put("role", role);
+            if (user.getSeller() != null) {
+                response.put("seller_id", user.getSeller().getId());
+            }
 
             return ResponseEntity.ok(response);
 
@@ -159,7 +162,8 @@ public class UserController {
             response.put("phone_number", user.getPhone_number());
             response.put("isCustomer", user.getCustomer() != null);
             response.put("isSeller", user.getSeller() != null);
-            response.put("role", user.getSeller() != null ? "SELLER" : "CUSTOMER");
+            String role = (user.getCurrentRole() != null) ? user.getCurrentRole() : (user.getSeller() != null ? "SELLER" : "CUSTOMER");
+            response.put("role", role);
             if (user.getCustomer() != null) {
                 response.put("shipping_address", user.getCustomer().getShippingAddress());
                 response.put("billing_address", user.getCustomer().getBillingAddress());
@@ -268,58 +272,97 @@ public class UserController {
             String role = (String) payload.get("role");
             if (idObj == null || role == null) return ResponseEntity.badRequest().body(Map.of("error", "userId and role are required"));
             Long id = Long.parseLong(idObj.toString());
+            System.out.println("[SWITCH-ROLE] Starting: userId=" + id + ", requestedRole=" + role);
+            
             var optional = userRepository.findById(id);
             if (optional.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             User user = optional.get();
+            System.out.println("[SWITCH-ROLE] Current state: isSeller=" + (user.getSeller() != null) + ", isCustomer=" + (user.getCustomer() != null));
 
             if ("SELLER".equalsIgnoreCase(role)) {
-                if (user.getSeller() == null) {
-                    Seller seller = new Seller();
-                    seller.setUser(user);
-                    seller.setStoreName((String) payload.getOrDefault("store_name", user.getUsername() + "'s Store"));
-                    seller.setStoreDescription((String) payload.getOrDefault("store_description", ""));
-                    seller.setBusinessLicense((String) payload.getOrDefault("business_license", null));
-                    sellerRepository.save(seller);
-                    user.setSeller(seller);
-                }
-            } else if ("CUSTOMER".equalsIgnoreCase(role)) {
-                if (user.getSeller() != null) {
-                    // To avoid database errors (Product.seller is non-nullable), delete products associated with the seller
-                    try {
-                        var seller = user.getSeller();
-                            var products = productRepository.findBySeller(seller);
-                        if (products != null && !products.isEmpty()) {
-                            // Attempt to delete via repository bulk operation to avoid entity state issues and cascade problems
-                            try {
-                                productRepository.deleteBySeller_Id(seller.getId());
-                            } catch (Exception ex) {
-                                // fallback to deleteAll just in case
-                                productRepository.deleteAll(products);
-                            }
+                // Check if user already has a seller entity (even if disconnected)
+                    if (user.getSeller() == null) {
+                        // Try to find an existing seller record for this user using native query
+                        Seller existingSeller = sellerRepository.findByUserIdNative(id);
+                        if (existingSeller != null) {
+                            // Reuse the existing seller by updating its user reference
+                            existingSeller.setUser(user);
+                            sellerRepository.save(existingSeller);
+                            user.setSeller(existingSeller);
+                        } else {
+                            // Create a new seller only if one doesn't exist
+                            Seller seller = new Seller();
+                            seller.setUser(user);
+                            seller.setStoreName((String) payload.getOrDefault("store_name", user.getUsername() + "'s Store"));
+                            seller.setStoreDescription((String) payload.getOrDefault("store_description", ""));
+                            seller.setBusinessLicense((String) payload.getOrDefault("business_license", null));
+                            sellerRepository.save(seller);
+                            user.setSeller(seller);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return ResponseEntity.status(500).body(Map.of("error", "Failed to remove products of seller before switching role: " + e.getMessage()));
                     }
-                    // Now it's safe to delete the seller
-                    sellerRepository.delete(user.getSeller());
+            } else if ("CUSTOMER".equalsIgnoreCase(role)) {
+                // Disconnect the seller from user without deleting it or its products
+                // This allows users to switch back to seller and keep their products
+                // We just clear the user reference in Java, but keep the database foreign key intact
+                // so we can find and reconnect to the same seller later
+                if (user.getSeller() != null) {
+                    // Do not delete or nullify the Seller DB record; just clear the user's in-memory reference
+                    // This preserves the seller row (and its seller_id) so it can be reused when switching back
                     user.setSeller(null);
+                    System.out.println("[DEBUG] Cleared user->seller reference for user " + id + " (seller kept in DB)");
                 }
+                
+                // Ensure customer entity exists
                 if (user.getCustomer() == null) {
                     Customer customer = new Customer();
                     customer.setUser(user);
                     customerRepository.save(customer);
                     user.setCustomer(customer);
+                    System.out.println("[DEBUG] Created customer entity for user " + id);
                 }
             }
+            
+            // Set the user's current active role so profile checks are authoritative
+            user.setCurrentRole(role.toUpperCase());
+            // Save user changes
             userRepository.save(user);
+            
+            // Flush and reload to ensure we have fresh data from DB
+            userRepository.flush();
+            user = userRepository.findById(id).orElse(user);
+            
+            // Build complete response with updated profile data
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Role switched");
-            response.put("role", user.getSeller() != null ? "SELLER" : "CUSTOMER");
+            response.put("user_id", user.getUser_id());
+            response.put("username", user.getUsername());
+            response.put("email", user.getEmail());
+            response.put("phone_number", user.getPhone_number());
+            response.put("isCustomer", user.getCustomer() != null);
+            response.put("isSeller", user.getSeller() != null);
+            String finalRole = (user.getCurrentRole() != null) ? user.getCurrentRole() : (user.getSeller() != null ? "SELLER" : "CUSTOMER");
+            response.put("role", finalRole);
+            
+            // Include seller info if user is now a seller
+            if (user.getSeller() != null) {
+                response.put("seller_id", user.getSeller().getId());
+                response.put("store_name", user.getSeller().getStoreName());
+                response.put("store_description", user.getSeller().getStoreDescription());
+                response.put("business_license", user.getSeller().getBusinessLicense());
+            }
+            
+            // Include customer info
+            if (user.getCustomer() != null) {
+                response.put("shipping_address", user.getCustomer().getShippingAddress());
+                response.put("billing_address", user.getCustomer().getBillingAddress());
+            }
+            
+            System.out.println("[SWITCH-ROLE] Success: returning role=" + response.get("role"));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.err.println("[SWITCH-ROLE] ERROR: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of("error", "Failed to switch role: " + e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("error", "Failed to switch role: " + e.getMessage()));
         }
     }
 }

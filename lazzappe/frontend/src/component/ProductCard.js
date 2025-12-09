@@ -19,10 +19,17 @@ export default function ProductCard({ product, onViewDetails, onAddToCart, canAd
             <div className="product-price">₱{product.price?.toFixed(2)}</div>
           </div>
           <div className="product-actions">
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => onAddToCart(product)}
-              disabled={!canAddToCart}
+            <button
+              className={`btn btn-secondary ${!canAddToCart ? 'disabled' : ''}`}
+              onClick={() => {
+                if (!canAddToCart) {
+                  // signal blocked attempt to parent so it can show a message
+                  if (typeof onAddToCart === 'function') onAddToCart(product, { blocked: true });
+                  return;
+                }
+                if (typeof onAddToCart === 'function') onAddToCart(product);
+              }}
+              aria-disabled={!canAddToCart}
               title={!canAddToCart ? 'Sellers cannot add products to the cart' : 'Add to cart'}
             >
               Add

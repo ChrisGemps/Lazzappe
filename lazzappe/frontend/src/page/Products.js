@@ -99,7 +99,12 @@ export default function Products() {
             key={p.id}
             product={p}
             onViewDetails={(prod) => setSelectedProduct(prod)}
-                onAddToCart={async (prod) => {
+                onAddToCart={async (prod, opts) => {
+                  if (opts && opts.blocked) {
+                    setToast({ show: true, message: 'You cannot add your own product to the cart', type: 'error' });
+                    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+                    return;
+                  }
                   const userStr = localStorage.getItem('user');
                   if (!userStr) {
                     setToast({ show: true, message: 'Cannot add to cart — please log in first', type: 'error' });
@@ -116,10 +121,22 @@ export default function Products() {
                   }
                   // Block adding your own product to your cart (in case the product was not removed yet)
                   try {
-                    const user = JSON.parse(userStr);
                     const currUserId = user?.id || user?.user_id || user?.userId;
-                    // product.raw?.seller?.user?.user_id etc. depending on server // normalize check
-                    const sellerUserId = prod?.raw?.seller_user_id || prod?.raw?.seller?.user?.user_id || prod?.raw?.seller?.user?.id || prod?.raw?.seller?.user?.userId || prod?.raw?.seller?.userId || null;
+                    // seller entity id on product (seller_id) or nested seller.id
+                    const productSellerEntityId = prod?.raw?.seller_id || prod?.raw?.seller?.id || prod?.raw?.seller?.seller_id || null;
+                    // seller's user id if available on the product payload
+                    const sellerUserId = prod?.raw?.seller_user_id || prod?.raw?.seller?.user?.user_id || prod?.raw?.seller?.user?.id || prod?.raw?.seller?.user?.userId || null;
+                    // current user's seller entity id (if user is/was a seller)
+                    const currentUserSellerId = user?.seller_id || user?.sellerId || user?.seller?.id || null;
+
+                    // If product belongs to the user's seller entity, block it
+                    if (productSellerEntityId && currentUserSellerId && Number(productSellerEntityId) === Number(currentUserSellerId)) {
+                      setToast({ show: true, message: 'You cannot add your own product to the cart', type: 'error' });
+                      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+                      return;
+                    }
+
+                    // Fallback: if the product contains a seller.user id, compare with current user id
                     if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) {
                       setToast({ show: true, message: 'You cannot add your own product to the cart', type: 'error' });
                       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
@@ -139,15 +156,18 @@ export default function Products() {
                   setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
                 }}
             canAddToCart={( () => {
-                const userStr = localStorage.getItem('user');
-                if (!userStr) return true; // allow guests to add (they will be asked to login when necessary)
-                const user = JSON.parse(userStr);
-                const role = (user && user.role) || '';
-                if (role === 'SELLER') return false;
-                const currUserId = user?.id || user?.user_id || user?.userId;
-                const sellerUserId = p?.raw?.seller_user_id || p?.raw?.seller?.user?.user_id || p?.raw?.seller?.user?.id || p?.raw?.seller?.user?.userId || p?.raw?.seller?.userId || null;
-                if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) return false;
-                return true;
+              const userStr = localStorage.getItem('user');
+              if (!userStr) return true; // allow guests to add (they will be asked to login when necessary)
+              const user = JSON.parse(userStr);
+              const role = (user && user.role) || '';
+              if (role === 'SELLER') return false;
+              const currUserId = user?.id || user?.user_id || user?.userId;
+              const productSellerEntityId = p?.raw?.seller_id || p?.raw?.seller?.id || p?.raw?.seller?.seller_id || null;
+              const currentUserSellerId = user?.seller_id || user?.sellerId || user?.seller?.id || null;
+              const sellerUserId = p?.raw?.seller_user_id || p?.raw?.seller?.user?.user_id || p?.raw?.seller?.user?.id || p?.raw?.seller?.user?.userId || null;
+              if (productSellerEntityId && currentUserSellerId && Number(productSellerEntityId) === Number(currentUserSellerId)) return false;
+              if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) return false;
+              return true;
               })()}
           />
         ))}
