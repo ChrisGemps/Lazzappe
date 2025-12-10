@@ -13,10 +13,13 @@ const CartPage = () => {
 
   const updateQuantity = async (id, change) => {
     try {
-      const item = cartItems.find(i => i.id === id);
-      if (!item) return;
+      const item = cartItems.find(i => i.cartItemId === id || i.id === id);
+      if (!item) {
+        console.error('Item not found for id:', id);
+        return;
+      }
       const newQty = Math.max(1, (item.qty || item.quantity || 1) + change);
-      await updateQty(id, newQty);
+      await updateQty(item.cartItemId || item.id, newQty);
     } catch (err) {
       console.error('Failed to update quantity', err);
       alert('Failed to update quantity. Please try again.');
@@ -25,7 +28,12 @@ const CartPage = () => {
 
   const removeItem = async (id) => {
     try {
-      await removeFromCart(id);
+      const item = cartItems.find(i => i.cartItemId === id || i.id === id);
+      if (!item) {
+        console.error('Item not found for removal:', id);
+        return;
+      }
+      await removeFromCart(item.cartItemId || item.id);
     } catch (err) {
       console.error('Failed to remove item', err);
       alert('Failed to remove item. Please try again.');
@@ -42,9 +50,30 @@ const CartPage = () => {
   const [isVoucherInputFocused, setIsVoucherInputFocused] = useState(false);
 
   const availableVouchers = {
-    'LP40': { code: 'LP40', type: 'percent', value: 40, label: ': 40% off' },
-    'NEW200': { code: 'NEW200', type: 'fixed', value: 200, label: ': ₱200 off' },
-    'SHIPFREE': { code: 'SHIPFREE', type: 'shipping', value: shippingBase, label: ': Free Shipping' }
+    'LP40': { 
+      code: 'LP40', 
+      type: 'percent', 
+      value: 40, 
+      label: '40% off entire order', 
+      description: 'Mega Sale - Get 40% discount on all items',
+      badge: '🔥'
+    },
+    'NEW200': { 
+      code: 'NEW200', 
+      type: 'fixed', 
+      value: 200, 
+      label: '₱200 off', 
+      description: 'New customer - Save ₱200 on your order',
+      badge: '⭐'
+    },
+    'SHIPFREE': { 
+      code: 'SHIPFREE', 
+      type: 'shipping', 
+      value: shippingBase, 
+      label: 'Free shipping', 
+      description: 'Free delivery on all orders',
+      badge: '🚚'
+    }
   };
 
   const MAX_VOUCHERS = 3;
@@ -189,11 +218,11 @@ const CartPage = () => {
                       <p className="cart-item-price">₱{(item.price).toFixed(2)}</p>
                       <div className="cart-item-actions">
                         <div className="quantity-control">
-                          <button onClick={() => updateQuantity(item.id, -1)} className="quantity-btn">−</button>
+                          <button onClick={() => updateQuantity(item.cartItemId || item.id, -1)} className="quantity-btn">−</button>
                           <span className="quantity-value">{item.qty || item.quantity || 1}</span>
-                          <button onClick={() => updateQuantity(item.id, 1)} className="quantity-btn">+</button>
+                          <button onClick={() => updateQuantity(item.cartItemId || item.id, 1)} className="quantity-btn">+</button>
                         </div>
-                        <button onClick={() => removeItem(item.id)} className="remove-btn" aria-label={`Remove ${item.name}`}>
+                        <button onClick={() => removeItem(item.cartItemId || item.id)} className="remove-btn" aria-label={`Remove ${item.name}`}>
                           <Trash2 size={16} />
                           <span className="remove-btn-text">Remove</span>
                         </button>
@@ -239,8 +268,11 @@ const CartPage = () => {
                     <div className="applied-vouchers">
                       {appliedVouchers.map(v => (
                         <div key={v.code} className="voucher-pill">
-                          <span className="voucher-code">{v.code}</span>
-                          <span className="voucher-label">{v.label}</span>
+                          <span className="voucher-pill-badge">{v.badge}</span>
+                          <div className="voucher-pill-content">
+                            <span className="voucher-code">{v.code}</span>
+                            <span className="voucher-label">{v.label}</span>
+                          </div>
                           <button className="remove-voucher" onClick={() => removeVoucher(v.code)}>✕</button>
                         </div>
                       ))}
@@ -254,8 +286,11 @@ const CartPage = () => {
                           className={`voucher-suggestion`}
                           onMouseDown={(e) => { e.preventDefault(); applyVoucherCode(s.code); }}
                         >
-                          <div className="voucher-suggestion-main">{s.code}</div>
-                          <div className="voucher-suggestion-sub">{s.label}</div>
+                          <div className="voucher-suggestion-badge">{s.badge}</div>
+                          <div className="voucher-suggestion-content">
+                            <div className="voucher-suggestion-main">{s.code}</div>
+                            <div className="voucher-suggestion-sub">{s.description}</div>
+                          </div>
                         </div>
                       ))}
                     </div>

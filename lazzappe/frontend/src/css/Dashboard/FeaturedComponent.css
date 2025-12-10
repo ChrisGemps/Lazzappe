@@ -263,9 +263,88 @@
   background: linear-gradient(135deg, #18569da9 0%, #146dd9 100%);
 }
  
+/* ================================
+   MODERNIZED HERO RIGHT BOTTOM
+   ================================ */
+
 .hero-right-bottom {
-  background: linear-gradient(135deg, #e91818 0%, #c80a5d 100%);
+  background: linear-gradient(135deg, #7b34f2 0%, #ec4899 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 14px;
+  backdrop-filter: blur(3px);
 }
+
+/* Soft glowing aura */
+.hero-right-bottom::before {
+  content: '';
+  position: absolute;
+  inset: -60%;
+  background: radial-gradient(circle at center,
+    rgba(255,255,255,0.18) 0%, 
+    rgba(255,255,255,0.05) 35%, 
+    transparent 70%);
+  animation: glowMove 10s ease-in-out infinite;
+}
+
+@keyframes glowMove {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, 20px) scale(1.05); }
+}
+
+.hero-right-bottom > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- IMPROVED FONT — Clean, premium, bold --- */
+.hero-right-bottom h3 {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  color: #ffffff;
+  margin-bottom: 14px;
+  font-family: 'Poppins', 'Inter', 'SF Pro Display', sans-serif;
+  text-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+
+/* ICONS */
+.games-icons {
+  display: flex;
+  gap: 18px;
+  font-size: 34px;
+  margin-top: 14px;
+  animation: floatPulse 3s ease-in-out infinite;
+}
+
+@keyframes floatPulse {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-5px) scale(1.03); }
+}
+
+.games-icons span {
+  display: inline-block;
+  transition: transform 0.35s ease, filter 0.35s ease;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.25));
+}
+
+/* Individual bounce offsets */
+.games-icons span:nth-child(1) { animation: softBounce 2.2s ease-in-out infinite 0s; }
+.games-icons span:nth-child(2) { animation: softBounce 2.2s ease-in-out infinite 0.2s; }
+.games-icons span:nth-child(3) { animation: softBounce 2.2s ease-in-out infinite 0.4s; }
+
+@keyframes softBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Hover: smooth neon pop */
+.hero-right-bottom:hover .games-icons span {
+  transform: scale(1.22);
+  filter: drop-shadow(0 5px 12px rgba(255,255,255,0.45));
+}
+
  
 .right-badge {
   font-size: 11px;

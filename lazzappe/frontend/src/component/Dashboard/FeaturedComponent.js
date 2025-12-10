@@ -13,7 +13,7 @@ export default function FeaturedComponent() {
       title: 'COMFY AT HOME',
       date: 'DEC 12',
       badge: '#LazzappeeNewNormal',
-      image: 'https://vader-prod.s3.amazonaws.com/1704736133-81eVfaCd5zL.jpg',
+      image: 'https://media.istockphoto.com/id/1357529193/photo/3d-rendering-of-a-cozy-living-room.jpg?s=612x612&w=0&k=20&c=l0cel7NC2iNNB9I7NBqOoiF9wpLiRFWdIDd8MCYFVqg=',
       discount: 'UP TO 50% OFF',
       category: 'Home Furnitures',
     },
@@ -168,7 +168,7 @@ export default function FeaturedComponent() {
           <p>SAVE UP TO ₱400</p>
         </div>
         <div className="hero-right-item hero-right-bottom" onClick={() => navigate('/products')} style={{cursor:'pointer'}}>
-          <h3>LAZZAPPEE Products</h3>
+          <h2>ALL LAZZAPPEE PRODUCTS</h2>
           <div className="games-icons">
             <span>🛍️</span>
             <span>🛒</span>
