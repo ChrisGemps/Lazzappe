@@ -10,6 +10,7 @@ const CartPage = () => {
   const { items: cartItems, updateQty, removeFromCart } = useCart();
   const navigate = useNavigate();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const updateQuantity = async (id, change) => {
     try {
@@ -17,18 +18,24 @@ const CartPage = () => {
       if (!item) return;
       const newQty = Math.max(1, (item.qty || item.quantity || 1) + change);
       await updateQty(id, newQty);
+      setToast({ show: true, message: 'Quantity updated', type: 'success' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
       console.error('Failed to update quantity', err);
-      alert('Failed to update quantity. Please try again.');
+      setToast({ show: true, message: 'Failed to update quantity. Please try again.', type: 'error' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     }
   };
 
   const removeItem = async (id) => {
     try {
       await removeFromCart(id);
+      setToast({ show: true, message: 'Item removed from cart', type: 'success' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
       console.error('Failed to remove item', err);
-      alert('Failed to remove item. Please try again.');
+      setToast({ show: true, message: 'Failed to remove item. Please try again.', type: 'error' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     }
   };
 
@@ -269,6 +276,9 @@ const CartPage = () => {
         </div>
       </div>
       <LoginModal open={loginModalOpen} onClose={() => { setLoginModalOpen(false); navigate('/dashboard'); }} />
+      {toast.show && (
+        <div className={`cart-toast ${toast.type === 'error' ? 'error' : 'success'}`}>{toast.message}</div>
+      )}
     </div>
   );
 }

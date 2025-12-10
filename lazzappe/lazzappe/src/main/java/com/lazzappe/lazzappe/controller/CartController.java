@@ -134,4 +134,77 @@ public class CartController {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to fetch cart: " + e.getMessage()));
         }
     }
+
+    // Update quantity of a cart item
+    @PutMapping("/item/{cartItemId}")
+    public ResponseEntity<?> updateCartItem(@PathVariable Long cartItemId, @RequestBody Map<String, Object> payload) {
+        try {
+            Object quantityObj = payload.get("quantity");
+            if (quantityObj == null) return ResponseEntity.badRequest().body(Map.of("error", "quantity is required"));
+            Integer quantity = Integer.parseInt(quantityObj.toString());
+            
+            if (quantity <= 0) return ResponseEntity.badRequest().body(Map.of("error", "quantity must be greater than 0"));
+            
+            Optional<CartItem> itemOpt = cartItemRepository.findById(cartItemId);
+            if (itemOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
+            CartItem item = itemOpt.get();
+            
+            item.setQuantity(quantity);
+            item.calculateSubtotal();
+            cartItemRepository.save(item);
+            
+            Map<String, Object> res = new HashMap<>();
+            Map<String, Object> itemMap = new HashMap<>();
+            itemMap.put("cart_item_id", item.getId());
+            Map<String, Object> pmap = new HashMap<>();
+            pmap.put("product_id", item.getProduct().getId());
+            pmap.put("name", item.getProduct().getName());
+            pmap.put("price", item.getProduct().getPrice());
+            itemMap.put("product", pmap);
+            itemMap.put("quantity", item.getQuantity());
+            res.put("item", itemMap);
+            
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to update cart item: " + e.getMessage()));
+        }
+    }
+
+    // Delete a cart item
+    @DeleteMapping("/item/{cartItemId}")
+    public ResponseEntity<?> deleteCartItem(@PathVariable Long cartItemId) {
+        try {
+            Optional<CartItem> itemOpt = cartItemRepository.findById(cartItemId);
+            if (itemOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
+            CartItem item = itemOpt.get();
+            cartItemRepository.delete(item);
+            return ResponseEntity.ok(Map.of("message", "Cart item deleted successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to delete cart item: " + e.getMessage()));
+        }
+    }
+
+    // Clear entire cart for a user
+    @DeleteMapping("/{userId}/clear")
+    public ResponseEntity<?> clearCart(@PathVariable Long userId) {
+        try {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            User user = userOpt.get();
+            if (user.getCustomer() == null) return ResponseEntity.status(400).body(Map.of("error", "User is not a customer"));
+            Customer customer = user.getCustomer();
+            Optional<Cart> cartOpt = cartRepository.findByCustomer(customer);
+            if (cartOpt.isPresent()) {
+                Cart cart = cartOpt.get();
+                cartItemRepository.deleteAll(cart.getCartItems());
+                cartRepository.delete(cart);
+            }
+            return ResponseEntity.ok(Map.of("message", "Cart cleared successfully"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to clear cart: " + e.getMessage()));
+        }
+    }
 }
