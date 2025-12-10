@@ -12,16 +12,15 @@ const CartPage = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  const updateQuantity = async (id, change) => {
+  const updateQuantity = async (cartItemId, productId, change) => {
     try {
-      const item = cartItems.find(i => i.cartItemId === id || i.id === id);
+      const item = cartItems.find(i => i.cartItemId === cartItemId);
       if (!item) {
-        console.error('Item not found for id:', id);
+        console.error('Item not found for cartItemId:', cartItemId);
         return;
       }
       const newQty = Math.max(1, (item.qty || item.quantity || 1) + change);
-      await updateQty(item.cartItemId || item.id, newQty);
-      await updateQty(id, newQty);
+      await updateQty(item.id, newQty);
       setToast({ show: true, message: 'Quantity updated', type: 'success' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
@@ -31,15 +30,14 @@ const CartPage = () => {
     }
   };
 
-  const removeItem = async (id) => {
+  const removeItem = async (cartItemId) => {
     try {
-      const item = cartItems.find(i => i.cartItemId === id || i.id === id);
+      const item = cartItems.find(i => i.cartItemId === cartItemId);
       if (!item) {
-        console.error('Item not found for removal:', id);
+        console.error('Item not found for cartItemId:', cartItemId);
         return;
       }
-      await removeFromCart(item.cartItemId || item.id);
-      await removeFromCart(id);
+      await removeFromCart(item.id);
       setToast({ show: true, message: 'Item removed from cart', type: 'success' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
@@ -227,11 +225,11 @@ const CartPage = () => {
                       <p className="cart-item-price">₱{(item.price).toFixed(2)}</p>
                       <div className="cart-item-actions">
                         <div className="quantity-control">
-                          <button onClick={() => updateQuantity(item.cartItemId || item.id, -1)} className="quantity-btn">−</button>
+                          <button onClick={() => updateQuantity(item.cartItemId, item.id, -1)} className="quantity-btn">−</button>
                           <span className="quantity-value">{item.qty || item.quantity || 1}</span>
-                          <button onClick={() => updateQuantity(item.cartItemId || item.id, 1)} className="quantity-btn">+</button>
+                          <button onClick={() => updateQuantity(item.cartItemId, item.id, 1)} className="quantity-btn">+</button>
                         </div>
-                        <button onClick={() => removeItem(item.cartItemId || item.id)} className="remove-btn" aria-label={`Remove ${item.name}`}>
+                        <button onClick={() => removeItem(item.cartItemId)} className="remove-btn" aria-label={`Remove ${item.name}`}>
                           <Trash2 size={16} />
                           <span className="remove-btn-text">Remove</span>
                         </button>
