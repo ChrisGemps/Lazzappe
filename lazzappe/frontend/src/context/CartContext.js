@@ -69,6 +69,15 @@ export function CartProvider({ children }) {
         }
       } catch (err) {}
 
+      // Check if product has sufficient stock before adding to cart
+      if (product?.stock !== undefined) {
+        const currentInCart = items.find(i => i.id === product.id)?.qty || 0;
+        const totalRequested = currentInCart + 1;
+        if (totalRequested > product.stock) {
+          return { ok: false, message: `Insufficient stock. Only ${product.stock} available.` };
+        }
+      }
+
       const res = await fetch('http://localhost:8080/api/cart/add', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: String(userId), productId: product.id, quantity: 1 })
@@ -146,6 +155,12 @@ export function CartProvider({ children }) {
         await addToCart(found || { id: productId });
         return;
       }
+
+      // Check stock availability before updating quantity
+      if (found?.stock !== undefined && qty > found.stock) {
+        throw new Error(`Insufficient stock. Only ${found.stock} available.`);
+      }
+
       const res = await fetch(`http://localhost:8080/api/cart/item/${cartItemId}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: qty })
@@ -156,6 +171,7 @@ export function CartProvider({ children }) {
       setItems((prev) => prev.map((p) => p.id === productId ? { ...p, qty: item.quantity || qty } : p));
     } catch (err) {
       console.error('Update qty failed:', err);
+      throw err; // throw error so caller can show error toast
     }
   };
 

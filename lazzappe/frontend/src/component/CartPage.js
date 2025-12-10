@@ -27,7 +27,8 @@ const CartPage = () => {
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
       console.error('Failed to update quantity', err);
-      setToast({ show: true, message: 'Failed to update quantity. Please try again.', type: 'error' });
+      const errorMsg = err?.message || 'Failed to update quantity. Please try again.';
+      setToast({ show: true, message: errorMsg, type: 'error' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     }
   };
