@@ -80,6 +80,44 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout }) => {
       }
 
       const data = await response.json();
+      
+      // After successful checkout, deduct stock from seller's products
+      // Get cart items from localStorage to see what was ordered
+      try {
+        const cartStr = localStorage.getItem('cart');
+        if (cartStr) {
+          const cartItems = JSON.parse(cartStr);
+          // For each item in cart, find the product and update stock
+          for (const cartItem of cartItems) {
+            try {
+              // Fetch the product to get its current details
+              const productRes = await fetch(`http://localhost:8080/api/products/${cartItem.id}`);
+              if (productRes.ok) {
+                const product = await productRes.json();
+                const newStock = Math.max(0, product.stock - cartItem.qty);
+                
+                // Update the product stock
+                await fetch(`http://localhost:8080/api/products/${cartItem.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    ...product,
+                    stock: newStock
+                  })
+                });
+              }
+            } catch (err) {
+              console.warn(`Failed to deduct stock for product ${cartItem.id}:`, err);
+              // don't fail checkout if stock update fails
+            }
+          }
+          // Notify sellers that products changed
+          try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed')); } catch (err) {}
+        }
+      } catch (err) {
+        console.warn('Error updating stock after checkout:', err);
+      }
+
       setSuccess(data);
       setLoading(false);
       setTimeout(() => {

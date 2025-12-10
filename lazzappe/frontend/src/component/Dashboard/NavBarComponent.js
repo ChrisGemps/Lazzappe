@@ -10,6 +10,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
+  const [role, setRole] = useState('');
   const [loginOpen, setLoginOpen] = useState(false);
   const [loginToast, setLoginToast] = useState({ show: false, message: '' });
   const { clearCart, itemCount } = useCart();
@@ -21,6 +22,17 @@ export default function Dashboard() {
     if (storedUsername) {
       setIsLoggedIn(true);
       setUsername(storedUsername);
+      // set role from stored user object if available
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u?.role) setRole(u.role);
+          else if (u?.isSeller) setRole('SELLER');
+        }
+      } catch (e) {
+        setRole('');
+      }
     }
   }, []);
 
@@ -32,6 +44,20 @@ export default function Dashboard() {
     if (storedUsername) {
       setIsLoggedIn(true);
       setUsername(storedUsername);
+      // sync role when route changes
+      try {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u?.role) setRole(u.role);
+          else if (u?.isSeller) setRole('SELLER');
+          else setRole('');
+        } else {
+          setRole('');
+        }
+      } catch (e) {
+        setRole('');
+      }
       // If login occurred on a full page (LoginPage) the NavBar may not have been mounted
       // yet when the login event was dispatched. Check a flag and show the toast when present.
       try {
@@ -56,16 +82,53 @@ export default function Dashboard() {
       if (storedUsername) {
         setIsLoggedIn(true);
         setUsername(storedUsername);
+        try {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const u = JSON.parse(storedUser);
+            if (u?.role) setRole(u.role);
+            else if (u?.isSeller) setRole('SELLER');
+            else setRole('');
+          } else {
+            setRole('');
+          }
+        } catch (e) {
+          setRole('');
+        }
       } else {
         setIsLoggedIn(false);
         setUsername('');
+        setRole('');
       }
     };
     window.addEventListener('storage', handleStorage);
     // Listen to explicit username-changed events fired from the LoginModal and other places
     const handleUsernameChanged = (e) => {
-      const payload = (e && e.detail) || localStorage.getItem('username');
-      const name = payload || localStorage.getItem('username') || '';
+      const payload = (e && e.detail) || null;
+      let name = '';
+      if (payload) {
+        if (typeof payload === 'string') {
+          name = payload;
+        } else if (typeof payload === 'object') {
+          name = payload.username || payload.name || localStorage.getItem('username') || '';
+          if (payload.role) setRole(payload.role);
+          else if (payload.isSeller) setRole('SELLER');
+        }
+      } else {
+        name = localStorage.getItem('username') || '';
+        try {
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            const u = JSON.parse(storedUser);
+            if (u?.role) setRole(u.role);
+            else if (u?.isSeller) setRole('SELLER');
+            else setRole('');
+          }
+        } catch (err) {
+          setRole('');
+        }
+      }
+
       if (name) {
         // show a temporary welcome toast
         setLoginToast({ show: true, message: `Welcome, ${name}` });
@@ -89,6 +152,7 @@ export default function Dashboard() {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUsername('');
+    setRole('');
     // Clear cart state and persist empty cart in localStorage
     try {
       clearCart();
@@ -147,8 +211,12 @@ export default function Dashboard() {
               >
                 Seller Centre
               </span>
-              <Link to="/seller-orders" className="nav-link">Manage Orders</Link>
-              <Link to="/customer-orders" className="nav-link">My Orders</Link>
+              {role !== 'CUSTOMER' && (
+                <Link to="/seller-orders" className="nav-link">Manage Orders</Link>
+              )}
+              {role !== 'SELLER' && (
+                <Link to="/customer-orders" className="nav-link">My Orders</Link>
+              )}
               <span>Follow us on ⓕ 𝕏 📸【ꚠ】</span>
             </div>
             <div className="navbar-top-right">
