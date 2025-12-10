@@ -63,6 +63,31 @@ export default function Products() {
 
   const normalize = (s) => (s || '').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
 
+  // Helper to detect if the current user is seller-only (cannot add to cart)
+  const isSellerOnly = (user) => {
+    if (!user) return false;
+    // Roles might be stored in various shapes: string, comma-separated, or array
+    const roleField = user.role || user.roles || '';
+    // If there's a direct seller/customer flags on the user object, prefer them
+    const hasSellerEntity = !!(user.seller || user.seller_id || user.sellerId);
+    const hasCustomerEntity = !!(user.customer || user.customer_id || user.customerId);
+    if (hasSellerEntity && !hasCustomerEntity) return true;
+
+    if (Array.isArray(roleField)) {
+      const roles = roleField.map((r) => ('' + r).toUpperCase());
+      const hasSeller = roles.some((r) => r.includes('SELLER'));
+      const hasCustomer = roles.some((r) => r.includes('CUSTOMER'));
+      return hasSeller && !hasCustomer;
+    }
+
+    const roleStr = ('' + roleField).toUpperCase();
+    // common values: 'SELLER', 'CUSTOMER', 'BOTH', or strings like 'SELLER,CUSTOMER'
+    if (roleStr === 'SELLER') return true;
+    if (roleStr === 'BOTH' || roleStr === 'CUSTOMER') return false;
+    // If it contains SELLER but not CUSTOMER, treat as seller-only
+    if (roleStr.includes('SELLER') && !roleStr.includes('CUSTOMER')) return true;
+    return false;
+  };
   const filtered = useMemo(() => {
     const arr = category
       ? products.filter((p) => {
@@ -113,10 +138,9 @@ export default function Products() {
                     return;
                   }
                   const user = JSON.parse(userStr);
-                  const role = (user && user.role) || '';
-                  // Only allow Customers or BOTH to add to cart
-                  if (role === 'SELLER') {
-                    setToast({ show: true, message: 'Sellers cannot add products to the cart', type: 'error' });
+                  // Only allow customers (or both) to add to cart — block seller-only accounts
+                  if (isSellerOnly(user)) {
+                    setToast({ show: true, message: 'You are currently a Seller and cannot add items to cart', type: 'error' });
                     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
                     return;
                   }
@@ -160,8 +184,7 @@ export default function Products() {
               const userStr = localStorage.getItem('user');
               if (!userStr) return true; // allow guests to add (they will be asked to login when necessary)
               const user = JSON.parse(userStr);
-              const role = (user && user.role) || '';
-              if (role === 'SELLER') return false;
+              if (isSellerOnly(user)) return false;
               const currUserId = user?.id || user?.user_id || user?.userId;
               const productSellerEntityId = p?.raw?.seller_id || p?.raw?.seller?.id || p?.raw?.seller?.seller_id || null;
               const currentUserSellerId = user?.seller_id || user?.sellerId || user?.seller?.id || null;
@@ -196,6 +219,12 @@ export default function Products() {
               if (userStr) {
                 const user = JSON.parse(userStr);
                 const currUserId = user?.id || user?.user_id || user?.userId;
+                // Block seller-only accounts from adding via modal as well
+                if (isSellerOnly(user)) {
+                  setToast({ show: true, message: 'Your account is a Seller account and cannot add items to a cart', type: 'error' });
+                  setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+                  return false;
+                }
                 const sellerUserId = prod?.raw?.seller_user_id || prod?.raw?.seller?.user?.user_id || prod?.raw?.seller?.user?.id || prod?.raw?.seller?.user?.userId || prod?.raw?.seller?.userId || null;
                 if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) {
                   setToast({ show: true, message: 'You cannot add your own product to the cart', type: 'error' });
