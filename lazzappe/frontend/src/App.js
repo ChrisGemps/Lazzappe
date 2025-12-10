@@ -9,6 +9,7 @@ import ProductsPage from "./page/Products";
 import ProfilePage from "./page/ProfilePage";
 import SellerDashboardPage from "./page/SellerDashboard";
 import ManageOrders from "./page/ManageOrders";
+import CustomerOrders from "./page/CustomerOrder";
 
 function App() {
   useEffect(() => {
@@ -67,6 +68,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage/>}/>
         <Route path="/seller-dashboard" element={<SellerDashboardPage/>}/>
         <Route path="/seller-orders" element={<ManageOrders/>}/>
+        <Route path="/customer-orders" element={<CustomerOrders/>}/>
       </Routes>
     </BrowserRouter>
   );

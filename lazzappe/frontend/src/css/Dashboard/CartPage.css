@@ -396,3 +396,33 @@
   box-shadow: 0 0 0 3px rgba(255, 123, 92, 0.25);
   transform: translateY(-1px);
 }
+
+/* Toast Notifications */
+.cart-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  background-color: #10b981;
+  color: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideInUp 0.3s ease-in-out;
+  font-weight: 500;
+}
+
+.cart-toast.error {
+  background-color: #ef4444;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
