@@ -26,7 +26,11 @@ public class Order {
     private BigDecimal totalAmount;
 
     @Column(nullable = false)
-    private String status; // PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+    private String status; // PENDING, PROCESSING, SHIPPING, DELIVERED, CANCELLED
+
+    // Billing status: TO_PAY (default) or PAID
+    @Column(name = "billing_status")
+    private String billingStatus;
 
     @Column(name = "shipping_address")
     private String shippingAddress;
@@ -41,6 +45,7 @@ public class Order {
     public Order() {
         this.orderDate = LocalDateTime.now();
         this.status = "PENDING";
+        this.billingStatus = "TO_PAY";
     }
 
     public Order(Customer customer, BigDecimal totalAmount, String shippingAddress, String paymentMethod) {
@@ -50,6 +55,7 @@ public class Order {
         this.paymentMethod = paymentMethod;
         this.orderDate = LocalDateTime.now();
         this.status = "PENDING";
+        this.billingStatus = "TO_PAY";
     }
 
     // Getters and Setters
@@ -67,6 +73,9 @@ public class Order {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getBillingStatus() { return billingStatus; }
+    public void setBillingStatus(String billingStatus) { this.billingStatus = billingStatus; }
 
     public String getShippingAddress() { return shippingAddress; }
     public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }

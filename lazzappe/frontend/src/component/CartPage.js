@@ -5,11 +5,13 @@ import NavBarComponent from "../component/Dashboard/NavBarComponent";
 import { Logotext2, LoginModal } from './components';
 import { Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import CheckoutModal from './CheckoutModal';
 
 const CartPage = () => {
-  const { items: cartItems, updateQty, removeFromCart } = useCart();
+  const { items: cartItems, updateQty, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const updateQuantity = async (id, change) => {
@@ -174,6 +176,22 @@ const CartPage = () => {
     };
   }, [navigate]);
 
+  const handleCheckout = async (orderData) => {
+    try {
+      await clearCart();
+      setCheckoutOpen(false);
+      setToast({ show: true, message: `Order placed successfully! Order ID: ${orderData.order_id}`, type: 'success' });
+      setTimeout(() => {
+        setToast({ show: false, message: '', type: 'success' });
+        navigate('/dashboard');
+      }, 3000);
+    } catch (err) {
+      console.error('Error after checkout:', err);
+      setToast({ show: true, message: 'Order placed but failed to clear cart. Please refresh.', type: 'error' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    }
+  };
+
   return (
     <div className="cart-page-root">
       <NavBarComponent />
@@ -267,7 +285,7 @@ const CartPage = () => {
                       ))}
                     </div>
                   )}
-                  <button disabled={cartItems.length === 0} className="checkout-btn">Proceed to Checkout<div className="arrow-icon"></div></button>
+                  <button disabled={cartItems.length === 0} className="checkout-btn" onClick={() => setCheckoutOpen(true)}>Proceed to Checkout<div className="arrow-icon"></div></button>
                   <p className="security-text">Secure checkout with encryption</p>
                 </div>
               </div>
@@ -276,6 +294,12 @@ const CartPage = () => {
         </div>
       </div>
       <LoginModal open={loginModalOpen} onClose={() => { setLoginModalOpen(false); navigate('/dashboard'); }} />
+      <CheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        totalAmount={grandTotal}
+        onCheckout={handleCheckout}
+      />
       {toast.show && (
         <div className={`cart-toast ${toast.type === 'error' ? 'error' : 'success'}`}>{toast.message}</div>
       )}
