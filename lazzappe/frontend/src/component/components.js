@@ -292,7 +292,7 @@ export const BrandSide = () => (
       justifyContent: "center",
       alignItems: "center",
       background:
-        "linear-gradient(-45deg, #dfefff, #b7d3ff, #e3f1ff, #a5c7ff, #c9ddff, #f0f7ff)",
+        "linear-gradient(-45deg, #f5f0ff, #e8deff, #dccff4, #c7b3ec, #b197e3, #9b7bdb)",
       backgroundSize: "600% 600%",
       animation: "blueFlow 6s ease infinite",
     }}
