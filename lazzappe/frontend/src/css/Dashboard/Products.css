@@ -19,7 +19,7 @@
 
 /* Wrapper */
 .products-wrapper {
-  padding: 48px 32px;
+  padding: 24px 32px;
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
   animation: fadeIn 0.4s var(--transition-smooth);
@@ -115,8 +115,8 @@
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 28px;
-  margin-top: 36px;
+  gap: 5px;
+  margin-top: 0px;
 }
 
 /* Empty state */
@@ -351,7 +351,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .products-wrapper {
-    padding: 32px 20px;
+    padding: 20px 20px;
   }
 
   .products-header {
