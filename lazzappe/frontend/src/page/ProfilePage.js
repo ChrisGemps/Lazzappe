@@ -29,6 +29,14 @@ export default function ProfilePage() {
 
   const [editedProfile, setEditedProfile] = useState(profile);
   const [roleSwitching, setRoleSwitching] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -187,20 +195,57 @@ export default function ProfilePage() {
   };
 
   const handlePasswordChange = async () => {
-    const currentPassword = prompt('Enter your current password:'); if (!currentPassword) return;
-    const newPassword = prompt('Enter new password:'); if (!newPassword) return;
-    const confirmPassword = prompt('Confirm new password:'); if (newPassword !== confirmPassword) { alert('Passwords do not match!'); return; }
-    if (newPassword.length < 6) { alert('Password must be at least 6 characters long'); return; }
+    setPasswordError('');
+
+    if (!passwordForm.currentPassword) {
+      setPasswordError('Please enter your current password');
+      return;
+    }
+    if (!passwordForm.newPassword) {
+      setPasswordError('Please enter a new password');
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
 
     try {
+      setPasswordLoading(true);
       const response = await fetch(`${API_BASE}/api/auth/change-password`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
-        body: JSON.stringify({ userId: String(profile.user_id), currentPassword, newPassword })
+        body: JSON.stringify({
+          userId: String(profile.user_id),
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword
+        })
       });
-      if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error || 'Failed to change password'); }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to change password');
+      }
+
       alert('Password changed successfully!');
-    } catch (err) { console.error('Error changing password:', err); alert(err.message || 'Failed to change password. Please try again.'); }
+      setPasswordModalOpen(false);
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setPasswordError('');
+    } catch (err) {
+      console.error('Error changing password:', err);
+      setPasswordError(err.message || 'Failed to change password. Please try again.');
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   const handleRoleSwitch = async (newRole) => {
@@ -345,7 +390,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="setting-item"><div className="setting-info"><h3 className="setting-title">Password</h3><p className="setting-desc">Update your password</p></div><button onClick={handlePasswordChange} className="setting-btn">Change</button></div>
+                <div className="setting-item"><div className="setting-info"><h3 className="setting-title">Password</h3><p className="setting-desc">Update your password</p></div><button onClick={() => setPasswordModalOpen(true)} className="setting-btn">Change</button></div>
 
                 <div className="setting-item"><div className="setting-info"><h3 className="setting-title">Two-Factor Authentication</h3><p className="setting-desc">Add an extra layer of security</p></div><button className="setting-btn">Enable</button></div>
 
@@ -397,6 +442,77 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      
+      {/* Password Change Modal */}
+      {passwordModalOpen && (
+        <div className="modal-overlay" onClick={() => setPasswordModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Change Password</h2>
+              <button className="modal-close" onClick={() => setPasswordModalOpen(false)}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              {passwordError && (
+                <div className="modal-error">{passwordError}</div>
+              )}
+              
+              <div className="modal-form-group">
+                <label className="modal-label">Current Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                  placeholder="Enter your current password"
+                  className="modal-input"
+                  disabled={passwordLoading}
+                />
+              </div>
+              
+              <div className="modal-form-group">
+                <label className="modal-label">New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                  placeholder="Enter new password (min 6 characters)"
+                  className="modal-input"
+                  disabled={passwordLoading}
+                />
+              </div>
+              
+              <div className="modal-form-group">
+                <label className="modal-label">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                  placeholder="Confirm new password"
+                  className="modal-input"
+                  disabled={passwordLoading}
+                />
+              </div>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="modal-btn modal-btn-cancel" 
+                onClick={() => setPasswordModalOpen(false)}
+                disabled={passwordLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn modal-btn-submit" 
+                onClick={handlePasswordChange}
+                disabled={passwordLoading}
+              >
+                {passwordLoading ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
