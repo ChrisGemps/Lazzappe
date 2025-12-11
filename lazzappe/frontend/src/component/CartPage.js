@@ -21,13 +21,17 @@ const CartPage = () => {
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
 
-  // Sample voucher data
+  // Sample voucher data (type: 'percent' | 'fixed' | 'shipping')
+  // Note: one voucher is intentionally hidden from suggestions: HAPPYHOLAZZAPPEE
   const allVouchers = [
-    { code: 'WELCOME10', badge: '10%', label: 'Welcome Discount', description: '10% off on first purchase' },
-    { code: 'SAVE20', badge: '20%', label: 'Save More', description: '20% off on orders above ₱500' },
-    { code: 'SHIP100', badge: 'FREE', label: 'Free Shipping', description: 'Free shipping on all orders' },
-    { code: 'SUMMER15', badge: '15%', label: 'Summer Sale', description: '15% off on all items' },
-    { code: 'FLASH5', badge: '5%', label: 'Flash Deal', description: '5% instant discount' }
+    { code: 'WELCOME10', type: 'percent', value: 10, badge: '10%', label: 'Welcome Discount', description: '10% off on first purchase' },
+    { code: 'SAVE20', type: 'percent', value: 20, badge: '20%', label: 'Save More', description: '20% off on orders above ₱500' },
+    { code: 'SHIP100', type: 'shipping', value: 0, badge: 'FREE', label: 'Free Shipping', description: 'Free shipping on all orders' },
+    { code: 'SUMMER15', type: 'percent', value: 15, badge: '15%', label: 'Summer Sale', description: '15% off on all items' },
+    { code: 'FLASH5', type: 'percent', value: 5, badge: '5%', label: 'Flash Deal', description: '5% instant discount' },
+    { code: 'NEW200', type: 'fixed', value: 200, badge: '₱200', label: '₱200 off', description: '₱200 off your order' },
+    // Hidden/secret voucher (not shown in suggestions)
+    { code: 'HAPPYHOLIZZAPPEE', type: 'percent', value: 40, badge: '🎁', label: 'Secret Gift: 40% OFF', description: 'Hidden promo for special users', hidden: true }
   ];
 
   const updateQuantity = async (cartItemId, productId, change) => {
@@ -74,11 +78,21 @@ const CartPage = () => {
     if (value.trim().length > 0) {
       const filtered = allVouchers.filter(v => 
         v.code.toUpperCase().includes(value.toUpperCase()) &&
-        !appliedVouchers.find(av => av.code === v.code)
+        !appliedVouchers.find(av => av.code === v.code) &&
+        !v.hidden
       );
       setFilteredSuggestions(filtered);
     } else {
       setFilteredSuggestions([]);
+    }
+  };
+
+  // Show suggestions on focus (even when input is empty) but exclude hidden and already-applied vouchers
+  const handleVoucherFocus = () => {
+    setIsVoucherInputFocused(true);
+    if (voucherInput.trim().length === 0) {
+      const filtered = allVouchers.filter(v => !appliedVouchers.find(av => av.code === v.code) && !v.hidden);
+      setFilteredSuggestions(filtered);
     }
   };
 
@@ -124,8 +138,27 @@ const CartPage = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.qty || item.quantity || 1), 0);
   const shippingBase = 150;
-  const tax = subtotal * 0.1;
-  const grandTotal = Math.max(0, subtotal + tax + shippingBase);
+
+  // Calculate voucher discounts
+  const percentTotal = appliedVouchers
+    .filter(v => v.type === 'percent')
+    .reduce((sum, v) => sum + (v.value || 0), 0);
+  const fixedTotal = appliedVouchers
+    .filter(v => v.type === 'fixed')
+    .reduce((sum, v) => sum + (v.value || 0), 0);
+  const hasFreeShipping = appliedVouchers.some(v => v.type === 'shipping');
+
+  // Apply percent discount first, then fixed discount
+  const percentMultiplier = Math.max(0, 1 - Math.min(percentTotal, 100) / 100);
+  const discountedSubtotalBeforeFixed = subtotal * percentMultiplier;
+  const discountedSubtotal = Math.max(0, discountedSubtotalBeforeFixed - fixedTotal);
+
+  const tax = discountedSubtotal * 0.1;
+  const shippingAfterVoucher = hasFreeShipping ? 0 : shippingBase;
+
+  const totalVoucherDiscount = Math.max(0, subtotal - discountedSubtotal) + (hasFreeShipping ? shippingBase : 0);
+
+  const grandTotal = Math.max(0, discountedSubtotal + tax + shippingAfterVoucher);
 
   // Show login modal if no user is currently logged in, and verify customer role for logged-in users
   useEffect(() => {
@@ -266,8 +299,11 @@ const CartPage = () => {
                 <h2 className="summary-title">Order Summary</h2>
                 <div className="summary-items">
                   <div className="summary-row"><span>Subtotal</span><span>₱{subtotal.toFixed(2)}</span></div>
+                  {totalVoucherDiscount > 0 && (
+                    <div className="summary-row"><span>Voucher Discount</span><span>-₱{totalVoucherDiscount.toFixed(2)}</span></div>
+                  )}
                   <div className="summary-row"><span>Tax (10%)</span><span>₱{tax.toFixed(2)}</span></div>
-                  <div className="summary-row"><span>Shipping</span><span>₱{shippingBase.toFixed(2)}</span></div>
+                  <div className="summary-row"><span>Shipping</span><span>₱{shippingAfterVoucher.toFixed(2)}</span></div>
                   <div className="summary-divider"><div className="summary-total"><span>Total</span><span className="summary-total-amount">₱{grandTotal.toFixed(2)}</span></div></div>
                 </div>
 
@@ -280,7 +316,7 @@ const CartPage = () => {
                       type="text"
                       placeholder="Enter voucher code"
                       className="voucher-input"
-                      onFocus={() => setIsVoucherInputFocused(true)}
+                      onFocus={handleVoucherFocus}
                       onBlur={() => setTimeout(() => setIsVoucherInputFocused(false), 180)}
                     />
                     <button className="btn btn-primary" onClick={onApplyVoucher}>Apply</button>

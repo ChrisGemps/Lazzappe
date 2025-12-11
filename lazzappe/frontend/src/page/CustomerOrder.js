@@ -188,6 +188,23 @@ export default function CustomerOrders() {
     }, 0);
   };
 
+  const getPaidAmount = (order) => {
+    if (!order) return '0.00';
+    const paidRaw = order.total_amount || order.totalAmount || order.total || order.paid_amount || order.paidAmount;
+    if (paidRaw !== undefined && paidRaw !== null && paidRaw !== '') {
+      const num = parseFloat(paidRaw) || 0;
+      return num.toFixed(2);
+    }
+    const original = calculateTotal(order.items || order.orderItems);
+    // apply LAZZAPPEEPAY discount if that payment method was used
+    const pm = (order.payment_method || order.paymentMethod || '').toString().toUpperCase();
+    const LAZZ_DISCOUNT = pm.includes('LAZZAPPEEPAY') ? 0.05 : 0;
+    const discounted = Math.max(0, original * (1 - LAZZ_DISCOUNT));
+    const lazz = parseFloat(order.lazzappeeCoinsUsed || order.lazzappee_coins_used || order.lazzappee_coins || order.lazzappeeCoins || 0) || 0;
+    const computed = Math.max(0, discounted - lazz);
+    return computed.toFixed(2);
+  };
+
   const canCancelOrder = (status) => {
     return status === 'PENDING' || status === 'PROCESSING';
   };
@@ -409,6 +426,10 @@ export default function CustomerOrders() {
                   <div className="customer-billing-section">
                     <p className="customer-billing-method">Method: {selectedOrder.payment_method || selectedOrder.paymentMethod || 'N/A'}</p>
                     <p className="customer-billing-status">Status: {getBillingLabel(selectedOrder)}</p>
+                    <p className="customer-paid-amount">Paid: ₱{getPaidAmount(selectedOrder)}</p>
+                    {(selectedOrder.lazzappeeCoinsUsed || selectedOrder.lazzappee_coins_used || selectedOrder.lazzappee_coins) && (
+                      <p className="customer-lazzappee-used">LazzappeeCoins used: ₱{(parseFloat(selectedOrder.lazzappeeCoinsUsed || selectedOrder.lazzappee_coins_used || selectedOrder.lazzappee_coins) || 0).toFixed(2)}</p>
+                    )}
                   </div>
                   <div className="customer-items-list">
                     {(selectedOrder.items || selectedOrder.orderItems || []).map((item, index) => {

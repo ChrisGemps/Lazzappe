@@ -37,6 +37,7 @@ export default function ProfilePage() {
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -82,6 +83,28 @@ export default function ProfilePage() {
   }, [navigate, API_BASE]);
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
+
+  // Load wallet balance from localStorage and listen for updates
+  useEffect(() => {
+    const readWallet = () => {
+      const val = parseFloat(localStorage.getItem('lazzappee_wallet') || '0');
+      setWalletBalance(Number.isFinite(val) ? val : 0);
+    };
+
+    readWallet();
+
+    const storageHandler = (e) => {
+      if (e.key === 'lazzappee_wallet') readWallet();
+    };
+    const customHandler = (e) => { readWallet(); };
+
+    window.addEventListener('storage', storageHandler);
+    window.addEventListener('lazzappe:wallet-updated', customHandler);
+    return () => {
+      window.removeEventListener('storage', storageHandler);
+      window.removeEventListener('lazzappe:wallet-updated', customHandler);
+    };
+  }, []);
 
   const handleEdit = () => { setIsEditing(true); setEditedProfile(profile); };
 
@@ -343,7 +366,13 @@ export default function ProfilePage() {
               </button>
             </div>
             <div className="profile-header-info">
-              <h1 className="profile-name">{profile.username || 'User'}</h1>
+              <div className="profile-name-row">
+                <h1 className="profile-name">{profile.username || 'User'}</h1>
+                <div className="profile-wallet" title="LazzappeeCoins balance">
+                  <span className="wallet-icon"> <h2>Lazzappee Coins Balance:  🪙 </h2></span>
+                  <span className="wallet-amount"> <h2>₱{walletBalance ? walletBalance.toFixed(2) : '0.00'} </h2></span>
+                </div>
+              </div>
               <p className="profile-member">{profile.role || 'CUSTOMER'}</p>
             </div>
           </div>

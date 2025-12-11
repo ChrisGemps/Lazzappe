@@ -13,7 +13,7 @@ export default function FeaturedComponent() {
       title: 'COMFY AT HOME',
       date: 'DEC 12',
       badge: '#LazzappeeNewNormal',
-      image: 'https://media.istockphoto.com/id/1357529193/photo/3d-rendering-of-a-cozy-living-room.jpg?s=612x612&w=0&k=20&c=l0cel7NC2iNNB9I7NBqOoiF9wpLiRFWdIDd8MCYFVqg=',
+      image: 'https://cdn.shopify.com/s/files/1/0777/8195/8992/files/bentley-home-ashford-sofa.jpg?v=1744795298&width=3840',
       discount: 'UP TO 50% OFF',
       category: 'Home Furnitures',
     },
@@ -162,11 +162,11 @@ export default function FeaturedComponent() {
 
       {/* Right Banner Section */}
       <div className="hero-right-section">
-        <div className="hero-right-item hero-right-top">
-          <span className="right-badge">#LazzappeeNewNormal</span>
-          <h3>LazzappeePay</h3>
-          <p>SAVE UP TO ₱400</p>
-        </div>
+        <div className="hero-right-item hero-right-top" style={{cursor:'pointer'}} onClick={() => navigate('/topup')}>
+            <span className="right-badge"><h3>Discounts are waiting for YOU with</h3></span>
+            <h3>#LazzappeePay!</h3>
+            <p>Get 5% off with LazzappeeCoins!</p>
+          </div>
         <div className="hero-right-item hero-right-bottom" onClick={() => navigate('/products')} style={{cursor:'pointer'}}>
           <h2>ALL LAZZAPPEE PRODUCTS</h2>
           <div className="games-icons">

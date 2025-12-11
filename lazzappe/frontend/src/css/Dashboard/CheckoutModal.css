@@ -97,6 +97,87 @@
   color: #667eea;
 }
 
+/* Order discount styling */
+.order-discount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: linear-gradient(90deg, #f0fdf4 0%, #ecfdf3 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #065f46;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.order-discount .amount {
+  color: #047857; /* darker green for amount */
+  font-weight: 700;
+}
+
+/* Wallet line (balance display) */
+.wallet-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: linear-gradient(90deg, #eef2ff 0%, #f8f6ff 100%);
+  border: 1px solid rgba(102, 126, 234, 0.12);
+  border-radius: 8px;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.wallet-line span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wallet-line::before {
+  content: "\1FA99"; /* coin emoji fallback */
+  font-size: 1.05rem;
+  opacity: 0.95;
+  margin-right: 6px;
+}
+
+.wallet-topup-btn {
+  background: linear-gradient(90deg, #7a5ed1, #5a36c9);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: none;
+  cursor: pointer;
+}
+
+.wallet-topup-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(90,54,201,0.18);
+}
+
+/* subtle icon on the left */
+.order-discount::before {
+  content: "\1F4B0"; /* money bag emoji as fallback */
+  margin-right: 8px;
+  font-size: 1.05rem;
+  opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  .order-discount {
+    padding: 0.55rem 0.7rem;
+    font-size: 0.9rem;
+  }
+}
+
 .checkout-label {
   display: block;
   margin-bottom: 0.5rem;

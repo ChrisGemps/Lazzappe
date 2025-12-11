@@ -1,7 +1,7 @@
 /* Hero Banner Container */
 .hero-banner {
   width: 100%;
-  padding: 16px;
+  padding: 8px;
   margin-bottom: 24px;
   display: flex;
   padding-inline: 16px;
@@ -16,10 +16,10 @@
   gap: 24px;
   background: linear-gradient(135deg, #0f4377 0%,#057bf2 55%, #e42f60 100%);
   border-radius: 8px;
-  padding: 32px;
+  padding: 12px; /* further reduced to lessen space around the hero (image margin) */
   position: relative;
   overflow: hidden;
-  min-height: 300px;
+  min-height: 260px;
   flex-wrap: nowrap;
   flex: 1;
 }
@@ -43,7 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 12px; /* smaller gap to reduce margin around the image */
   padding: 0; /* padding is handled by .hero-container */
   position: relative;
 }
@@ -123,12 +123,18 @@
   align-items: center;
   justify-content: center;
   z-index: 2;
+  overflow: hidden;
 }
- 
+
 .hero-image {
-  max-width: 100%;
-  max-height: 250px;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  max-width: 800px;
+  max-height: 400px;
+  object-fit: cover; /* fill the frame while preserving aspect */
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(9,30,66,0.12);
+  display: block;
 }
  
 /* Right Discount Section */
@@ -210,18 +216,27 @@
   width: calc(100% - 32px);
 }
  
+
 .dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: none;
-  background-color: #ddd;
+  background: transparent; /* default transparent */
+  border: 2px solid rgba(255,255,255,0.18); /* subtle ring */
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.25s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
- 
+
 .dot.active {
   background-color: #41ff33;
+  border-color: rgba(65,255,51,0.95);
+  box-shadow: 0 6px 18px rgba(65,255,51,0.14);
+  transform: scale(1.08);
+}
+
+.dot:hover {
+  transform: scale(1.06);
+  border-color: rgba(255,255,255,0.28);
 }
  
 .dot:hover {
@@ -260,7 +275,88 @@
 
  
 .hero-right-top {
-  background: linear-gradient(135deg, #18569da9 0%, #146dd9 100%);
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 60%, #6153d6 100%);
+  padding: 20px 22px;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 160px;
+}
+/* Dome animation: soft radial highlight + moving sheen */
+.hero-right-top::before {
+  content: '';
+  position: absolute;
+  left: -20%;
+  bottom: -40%;
+  width: 200%;
+  height: 120%;
+  background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.16), rgba(255,255,255,0.06) 22%, transparent 40%);
+  transform: rotate(-12deg) scale(0.9);
+  filter: blur(22px);
+  opacity: 0.95;
+  animation: domePulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.hero-right-top::after {
+  content: '';
+  position: absolute;
+  left: -30%;
+  top: -30%;
+  width: 160%;
+  height: 60%;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.16), rgba(255,255,255,0.02));
+  transform: skewX(-18deg);
+  filter: blur(6px);
+  opacity: 0.9;
+  animation: sheenMove 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes domePulse {
+  0% { transform: rotate(-12deg) scale(0.92); opacity: 0.9; }
+  50% { transform: rotate(-12deg) scale(1.02); opacity: 1; }
+  100% { transform: rotate(-12deg) scale(0.92); opacity: 0.9; }
+}
+
+@keyframes sheenMove {
+  0% { transform: translateX(-10%) skewX(-18deg); opacity: 0.05; }
+  50% { transform: translateX(30%) skewX(-18deg); opacity: 0.25; }
+  100% { transform: translateX(110%) skewX(-18deg); opacity: 0.05; }
+}
+
+/* Entrance animations for text */
+.hero-right-top .right-badge {
+  transform-origin: left center;
+  animation: badgePop 0.6s cubic-bezier(.2,.9,.3,1);
+}
+
+.hero-right-top h3 {
+  animation: titleRise 0.7s ease-out both;
+}
+
+.hero-right-top p {
+  animation: descFade 0.9s ease-out both;
+}
+
+@keyframes badgePop {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes titleRise {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes descFade {
+  0% { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
 }
  
 /* ================================
@@ -347,21 +443,68 @@
 
  
 .right-badge {
-  font-size: 11px;
-  opacity: 0.8;
-  margin-bottom: 8px;
+  display: inline-block;
+  font-size: 12px;
+  opacity: 0.95;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  color: #e6f6ff;
+  font-weight: 700;
+  letter-spacing: 0.4px;
 }
  
 .hero-right-item h3 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 6px 18px rgba(13,30,60,0.25);
 }
  
 .hero-right-item p {
-  margin: 8px 0 0 0;
-  font-size: 14px;
-  font-weight: 600;
+  margin: 6px 0 0 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fffbeb;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  padding: 8px 10px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+/* Decorative accent */
+.hero-right-top::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -30px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.12), transparent 40%);
+  transform: rotate(25deg);
+  filter: blur(6px);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* CTA style if added later */
+.hero-right-top .cta-button {
+  margin-top: 12px;
+  background: linear-gradient(90deg, #fff 0%, #f3f4f6 100%);
+  color: #0f172a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(33, 97, 170, 0.12);
+  border: none;
+  cursor: pointer;
+}
+
+.hero-right-top:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 14px 36px rgba(37,99,235,0.18);
 }
  
 .games-icons {
@@ -389,6 +532,7 @@
  
   .hero-image-section {
     flex: 1 1 auto;
+    margin: 12px 0;
   }
  
   .hero-discount {
@@ -414,6 +558,12 @@
  
   .hero-right-section {
     width: 100%;
+  }
+  .hero-image {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 8px;
   }
 }
 

@@ -93,6 +93,27 @@
   flex: 1;
 }
 
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.85));
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(122,94,209,0.12);
+  box-shadow: 0 6px 18px rgba(122,94,209,0.06);
+}
+
+.wallet-icon { font-size: 1.05rem; }
+.wallet-amount { font-weight: 700; color: #0f172a; }
+
 .profile-name {
   font-size: 2rem;
   font-weight: 300;

@@ -220,6 +220,22 @@ export default function ManageOrders() {
     }, 0);
   };
 
+  const getPaidAmount = (order) => {
+    if (!order) return '0.00';
+    // prefer server-provided paid/total fields
+    const paidRaw = order.total_amount || order.totalAmount || order.total || order.paid_amount || order.paidAmount;
+    if (paidRaw !== undefined && paidRaw !== null && paidRaw !== '') {
+      const num = parseFloat(paidRaw) || 0;
+      return num.toFixed(2);
+    }
+
+    // fallback: compute from items minus any lazzappee coins used
+    const original = calculateTotal(order.items || order.orderItems);
+    const lazz = parseFloat(order.lazzappeeCoinsUsed || order.lazzappee_coins_used || order.lazzappee_coins || order.lazzappeeCoins || 0) || 0;
+    const computed = Math.max(0, original - lazz);
+    return computed.toFixed(2);
+  };
+
   return (
     <>
       <NavBarComponent />
@@ -405,6 +421,10 @@ export default function ManageOrders() {
                   <div className="payment-info">
                     <p className="payment-method">Method: {selectedOrder.payment_method || selectedOrder.paymentMethod || 'N/A'}</p>
                     <p className="payment-status">Billing: {getBillingLabel(selectedOrder)}</p>
+                    <p className="payment-paid">Paid: ₱{getPaidAmount(selectedOrder)}</p>
+                    {(selectedOrder.lazzappeeCoinsUsed || selectedOrder.lazzappee_coins_used || selectedOrder.lazzappee_coins) && (
+                      <p className="payment-lazzappee">LazzappeeCoins used: ₱{(parseFloat(selectedOrder.lazzappeeCoinsUsed || selectedOrder.lazzappee_coins_used || selectedOrder.lazzappee_coins) || 0).toFixed(2)}</p>
+                    )}
                   </div>
                   <div className="items-list">
                     {(selectedOrder.items || selectedOrder.orderItems || []).map((item, index) => {

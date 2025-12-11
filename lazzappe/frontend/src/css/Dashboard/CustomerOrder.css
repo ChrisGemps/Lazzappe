@@ -399,6 +399,25 @@
   color: #1f2937;
 }
 
+/* Payment info styles in order modal */
+.customer-billing-section p {
+  margin: 0.25rem 0;
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.customer-paid-amount {
+  color: #059669; /* green */
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+.customer-lazzappee-used {
+  color: #7a5ed1; /* brand purple */
+  font-weight: 600;
+  margin-top: 0.125rem;
+}
+
 /* Item thumbnails inside modal */
 .customer-items-list {
   display: flex;

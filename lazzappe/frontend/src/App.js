@@ -4,6 +4,7 @@ import Dashboard from "./page/Dashboard";
 import LoginPage from "./page/LoginPage";
 import Register from "./page/Register";
 import LandingPage from "./page/LandingPage";
+import TopUpPage from "./page/TopUpPage";
 import CartPage from "./component/CartPage";
 import ProductsPage from "./page/Products";
 import ProfilePage from "./page/ProfilePage";
@@ -63,6 +64,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/topup" element={<TopUpPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/profile" element={<ProfilePage/>}/>
