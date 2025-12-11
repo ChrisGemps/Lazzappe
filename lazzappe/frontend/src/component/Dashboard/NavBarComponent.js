@@ -211,7 +211,6 @@ export default function Dashboard() {
               >
                 Seller Centre
               </span>
-              <Link to="/customer-orders" className="nav-link">My Orders</Link>
               {role !== 'CUSTOMER' && (
                 <Link to="/seller-orders" className="nav-link">Manage Orders</Link>
               )}
