@@ -139,7 +139,7 @@ export default function CustomerOrders() {
     switch (status) {
       case 'PENDING': return 'status-pending';
       case 'PROCESSING': return 'status-processing';
-      case 'SHIPPED': return 'status-shipped';
+      case 'SHIPPING': return 'status-shipping';
       case 'DELIVERED': return 'status-delivered';
       case 'CANCELLED': return 'status-cancelled';
       default: return 'status-pending';
@@ -150,16 +150,42 @@ export default function CustomerOrders() {
     switch (status) {
       case 'PENDING': return '🕐';
       case 'PROCESSING': return '📦';
-      case 'SHIPPED': return '🚚';
+      case 'SHIPPING': return '🚚';
       case 'DELIVERED': return '✅';
       case 'CANCELLED': return '❌';
       default: return '📋';
     }
   };
 
-  const calculateTotal = (orderItems) => {
-    if (!orderItems || orderItems.length === 0) return 0;
-    return orderItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+  const getBillingLabel = (order) => {
+    if (!order) return 'TO_PAY';
+    const billing = order.billing_status || order.billingStatus;
+    if (billing) return billing === 'PAID' ? 'PAID' : 'TO_PAY';
+
+    const pm = (order.payment_method || order.paymentMethod || order.payment || '').toString().toUpperCase();
+    // Treat common online payment identifiers as paid immediately
+    const onlineIndicators = ['ONLINE', 'GCASH', 'PAYPAL', 'CARD', 'VIRTUAL', 'ONLINE_PAYMENT'];
+    for (const ind of onlineIndicators) {
+      if (pm.includes(ind)) return 'PAID';
+    }
+
+    // If COD, only become PAID when order is delivered/received
+    if (pm.includes('COD') || pm.includes('CASH')) {
+      return order.status === 'DELIVERED' ? 'PAID' : 'TO_PAY';
+    }
+
+    // Fallback: if order already delivered, mark as PAID, else TO_PAY
+    return order.status === 'DELIVERED' ? 'PAID' : 'TO_PAY';
+  };
+
+  const calculateTotal = (items) => {
+    const list = items || [];
+    if (!list || list.length === 0) return 0;
+    return list.reduce((sum, item) => {
+      const qty = item.quantity || item.qty || 0;
+      const price = parseFloat(item.price || 0) || 0;
+      return sum + (price * qty);
+    }, 0);
   };
 
   const canCancelOrder = (status) => {
@@ -201,9 +227,9 @@ export default function CustomerOrders() {
               <div className="stat-icon">🚚</div>
               <div>
                 <h3 className="customer-stat-number">
-                  {orders.filter(o => o.status === 'PROCESSING' || o.status === 'SHIPPED').length}
+                  {orders.filter(o => o.status === 'PROCESSING' || o.status === 'SHIPPING').length}
                 </h3>
-                <p className="customer-stat-label">In Transit</p>
+                <p className="customer-stat-label">Shipping</p>
               </div>
             </div>
             <div className="customer-stat-card">
@@ -238,10 +264,10 @@ export default function CustomerOrders() {
               Processing
             </button>
             <button
-              className={`customer-filter-tab ${statusFilter === 'SHIPPED' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('SHIPPED')}
+              className={`customer-filter-tab ${statusFilter === 'SHIPPING' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('SHIPPING')}
             >
-              Shipped
+              Shipping
             </button>
             <button
               className={`customer-filter-tab ${statusFilter === 'DELIVERED' ? 'active' : ''}`}
@@ -301,12 +327,16 @@ export default function CustomerOrders() {
                       </div>
                       <div className="customer-order-items-count">
                         <p className="customer-detail-label">Items</p>
-                        <p className="customer-detail-value">{order.orderItems?.length || 0} items</p>
+                        <p className="customer-detail-value">{(order.items?.length ?? order.orderItems?.length ?? 0)} items</p>
+                      </div>
+                      <div className="customer-order-billing">
+                        <p className="customer-detail-label">Payment</p>
+                        <p className="customer-detail-value">{getBillingLabel(order)}</p>
                       </div>
                       <div className="customer-order-total">
                         <p className="customer-detail-label">Total</p>
                         <p className="customer-detail-value customer-total-amount">
-                          ₱{calculateTotal(order.orderItems).toFixed(2)}
+                          ₱{calculateTotal(order.items || order.orderItems).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -354,17 +384,17 @@ export default function CustomerOrders() {
                 <div className="customer-info-section">
                   <h3 className="customer-section-title">Order Status</h3>
                   <div className="status-timeline">
-                    <div className={`timeline-step ${['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'].includes(selectedOrder.status) ? 'active' : ''}`}>
+                    <div className={`timeline-step ${['PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED'].includes(selectedOrder.status) ? 'active' : ''}`}>
                       <div className="timeline-dot"></div>
                       <p className="timeline-label">Pending</p>
                     </div>
-                    <div className={`timeline-step ${['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(selectedOrder.status) ? 'active' : ''}`}>
+                    <div className={`timeline-step ${['PROCESSING', 'SHIPPING', 'DELIVERED'].includes(selectedOrder.status) ? 'active' : ''}`}>
                       <div className="timeline-dot"></div>
                       <p className="timeline-label">Processing</p>
                     </div>
-                    <div className={`timeline-step ${['SHIPPED', 'DELIVERED'].includes(selectedOrder.status) ? 'active' : ''}`}>
+                    <div className={`timeline-step ${['SHIPPING', 'DELIVERED'].includes(selectedOrder.status) ? 'active' : ''}`}>
                       <div className="timeline-dot"></div>
-                      <p className="timeline-label">Shipped</p>
+                      <p className="timeline-label">Shipping</p>
                     </div>
                     <div className={`timeline-step ${selectedOrder.status === 'DELIVERED' ? 'active' : ''}`}>
                       <div className="timeline-dot"></div>
@@ -373,50 +403,48 @@ export default function CustomerOrders() {
                   </div>
                 </div>
 
-                {/* Shipping Info */}
-                <div className="customer-info-section">
-                  <h3 className="customer-section-title">Shipping Information</h3>
-                  <div className="customer-info-grid">
-                    <div className="customer-info-item">
-                      <span className="customer-info-label">Delivery Address:</span>
-                      <span className="customer-info-value">{selectedOrder.shipping_address || 'N/A'}</span>
-                    </div>
-                    <div className="customer-info-item">
-                      <span className="customer-info-label">Order Date:</span>
-                      <span className="customer-info-value">
-                        {new Date(selectedOrder.order_date).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="customer-info-item">
-                      <span className="customer-info-label">Seller:</span>
-                      <span className="customer-info-value">{selectedOrder.seller?.username || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Order Items */}
                 <div className="customer-info-section">
                   <h3 className="customer-section-title">Order Items</h3>
+                  <div className="customer-billing-section">
+                    <p className="customer-billing-method">Method: {selectedOrder.payment_method || selectedOrder.paymentMethod || 'N/A'}</p>
+                    <p className="customer-billing-status">Status: {getBillingLabel(selectedOrder)}</p>
+                  </div>
                   <div className="customer-items-list">
-                    {selectedOrder.orderItems?.map((item, index) => (
-                      <div key={index} className="customer-item-row">
-                        <div className="customer-item-info">
-                          <p className="customer-item-name">{item.product?.name || 'Product'}</p>
-                          <p className="customer-item-quantity">Quantity: {item.quantity}</p>
+                    {(selectedOrder.items || selectedOrder.orderItems || []).map((item, index) => {
+                      const imgSrc = item.product?.image_url || item.image_url || item.product_image || item.image || '';
+                      const title = item.product?.name || item.product_name || 'Product';
+                      const qty = item.quantity || item.qty || 0;
+                      const price = (parseFloat(item.price) || 0).toFixed(2);
+                      const subtotal = (qty * (parseFloat(item.price) || 0)).toFixed(2);
+                      return (
+                        <div key={item.order_item_id || index} className="customer-item-row">
+                          <div className="customer-item-thumb">
+                            {imgSrc ? <img src={imgSrc} alt={title} /> : <div className="no-image-small">No Image</div>}
+                          </div>
+                          <div className="customer-item-info">
+                            <p className="customer-item-name">{title}</p>
+                            <p className="customer-item-meta">ID: {item.product_id || item.product?.id || '-'}</p>
+                            <p className="customer-item-quantity">Quantity: {qty}</p>
+                          </div>
+                          <div className="customer-item-pricing">
+                            <p className="customer-item-price">₱{price}</p>
+                            <p className="customer-item-subtotal">Subtotal: ₱{subtotal}</p>
+                          </div>
                         </div>
-                        <p className="customer-item-price">₱{parseFloat(item.price).toFixed(2)}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="customer-order-total-row">
                     <span className="customer-total-label">Total Amount:</span>
                     <span className="customer-total-value">
-                      ₱{calculateTotal(selectedOrder.orderItems).toFixed(2)}
+                      ₱{calculateTotal(selectedOrder.items || selectedOrder.orderItems).toFixed(2)}
                     </span>
                   </div>
+
                 </div>
 
-                {/* Actions */}
+                {/* Actions: cancel option */}
                 {canCancelOrder(selectedOrder.status) && (
                   <div className="customer-info-section">
                     <button

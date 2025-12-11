@@ -242,7 +242,7 @@
   color: #1e40af;
 }
 
-.status-shipped {
+.status-shipping {
   background: #e0e7ff;
   color: #4338ca;
 }
@@ -398,6 +398,69 @@
   background: #f3f4f6;
   color: #1f2937;
 }
+
+/* Item thumbnails inside modal */
+.customer-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.customer-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+}
+
+.customer-item-thumb {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+}
+
+.customer-item-thumb img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.no-image-small {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 8px;
+  font-size: 0.75rem;
+}
+
+.customer-item-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.customer-item-pricing {
+  text-align: right;
+  min-width: 120px;
+}
+
+.customer-item-subtotal {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0 0;
+}
+
 
 .customer-modal-body {
   padding: 2rem;

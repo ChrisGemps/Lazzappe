@@ -174,7 +174,7 @@ export default function Products() {
                   if (!added || (added && added.ok === false)) {
                     const message = (added && added.message) || 'Failed to add product to cart. Please try again.';
                     setToast({ show: true, message, type: 'error' });
-                    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+                    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
                     return;
                   }
                   setToast({ show: true, message: `${prod.name} has been added to your cart`, type: 'success' });
@@ -237,7 +237,7 @@ export default function Products() {
             if (!added || (added && added.ok === false)) {
               const message = (added && added.message) || 'Sellers cannot add products to the cart';
               setToast({ show: true, message, type: 'error' });
-              setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
+              setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
               return false;
             }
             setToast({ show: true, message: `${prod.name} has been added to your cart`, type: 'success' });

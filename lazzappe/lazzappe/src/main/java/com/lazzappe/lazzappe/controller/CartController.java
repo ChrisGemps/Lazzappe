@@ -3,16 +3,21 @@ package com.lazzappe.lazzappe.controller;
 import com.lazzappe.lazzappe.entity.Cart;
 import com.lazzappe.lazzappe.entity.CartItem;
 import com.lazzappe.lazzappe.entity.Customer;
+import com.lazzappe.lazzappe.entity.Order;
+import com.lazzappe.lazzappe.entity.OrderItem;
 import com.lazzappe.lazzappe.entity.Product;
 import com.lazzappe.lazzappe.entity.User;
 import com.lazzappe.lazzappe.repository.CartItemRepository;
 import com.lazzappe.lazzappe.repository.CartRepository;
+import com.lazzappe.lazzappe.repository.OrderRepository;
 import com.lazzappe.lazzappe.repository.ProductRepository;
 import com.lazzappe.lazzappe.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @RestController
@@ -32,6 +37,9 @@ public class CartController {
 
     @Autowired
     private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @PostMapping("/add")
     public ResponseEntity<?> addToCart(@RequestBody Map<String, Object> payload) {
@@ -207,4 +215,72 @@ public class CartController {
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to clear cart: " + e.getMessage()));
         }
     }
+
+    // Checkout: Create order from cart
+    @PostMapping("/checkout")
+    @Transactional
+    public ResponseEntity<?> checkout(@RequestBody Map<String, Object> payload) {
+        try {
+            Object userIdObj = payload.get("userId");
+            String paymentMethod = (String) payload.get("paymentMethod"); // "ONLINE" or "COD" (cash on delivery)
+            String shippingAddress = (String) payload.get("shippingAddress");
+            Object totalObj = payload.get("totalAmount");
+
+            if (userIdObj == null || paymentMethod == null || shippingAddress == null || totalObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "userId, paymentMethod, shippingAddress, and totalAmount are required"));
+            }
+
+            Long userId = Long.parseLong(userIdObj.toString());
+            BigDecimal totalAmount = new BigDecimal(totalObj.toString());
+
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            User user = userOpt.get();
+
+            if (user.getCustomer() == null) return ResponseEntity.status(400).body(Map.of("error", "User is not a customer"));
+            Customer customer = user.getCustomer();
+
+            Optional<Cart> cartOpt = cartRepository.findByCustomer(customer);
+            if (cartOpt.isEmpty() || cartOpt.get().getCartItems().isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("error", "Cart is empty"));
+            }
+
+            Cart cart = cartOpt.get();
+
+            // Create order
+            Order order = new Order(customer, totalAmount, shippingAddress, paymentMethod);
+            orderRepository.save(order);
+
+            // Transfer cart items to order items
+            for (CartItem cartItem : cart.getCartItems()) {
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setProduct(cartItem.getProduct());
+                orderItem.setQuantity(cartItem.getQuantity());
+                orderItem.setPrice(cartItem.getProduct().getPrice());
+                orderItem.calculateSubtotal();
+                order.getOrderItems().add(orderItem);
+            }
+
+            orderRepository.save(order);
+
+            // Clear the cart
+            cartItemRepository.deleteAll(cart.getCartItems());
+            cartRepository.delete(cart);
+
+            // Build response
+            Map<String, Object> res = new HashMap<>();
+            res.put("message", "Order placed successfully");
+            res.put("order_id", order.getId());
+            res.put("total_amount", order.getTotalAmount());
+            res.put("payment_method", order.getPaymentMethod());
+            res.put("status", order.getStatus());
+
+            return ResponseEntity.ok(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to place order: " + e.getMessage()));
+        }
+    }
 }
+

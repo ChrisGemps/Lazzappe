@@ -121,20 +121,103 @@ export default function ManageOrders() {
     }
   };
 
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:8080/api/orders/${orderId}/accept`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        alert('Order accepted successfully!');
+        const userStr = localStorage.getItem('user');
+        const user = JSON.parse(userStr);
+        const userId = user.id || user.user_id;
+        fetchOrders(userId);
+        setShowModal(false);
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || 'Failed to accept order');
+      }
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      alert('Failed to accept order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (window.confirm('Are you sure you want to cancel this order?')) {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:8080/api/orders/${orderId}/cancel`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          alert('Order cancelled successfully!');
+          const userStr = localStorage.getItem('user');
+          const user = JSON.parse(userStr);
+          const userId = user.id || user.user_id;
+          fetchOrders(userId);
+          setShowModal(false);
+        } else {
+          const errorData = await response.json();
+          alert(errorData.error || 'Failed to cancel order');
+        }
+      } catch (error) {
+        console.error('Error cancelling order:', error);
+        alert('Failed to cancel order. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'PENDING': return 'status-pending';
       case 'PROCESSING': return 'status-processing';
-      case 'SHIPPED': return 'status-shipped';
+      case 'SHIPPING': return 'status-shipping';
       case 'DELIVERED': return 'status-delivered';
       case 'CANCELLED': return 'status-cancelled';
       default: return 'status-pending';
     }
   };
 
-  const calculateTotal = (orderItems) => {
-    if (!orderItems || orderItems.length === 0) return 0;
-    return orderItems.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+  const getBillingLabel = (order) => {
+    if (!order) return 'TO_PAY';
+    const billing = order.billing_status || order.billingStatus;
+    if (billing) return billing === 'PAID' ? 'PAID' : 'TO_PAY';
+
+    const pm = (order.payment_method || order.paymentMethod || order.payment || '').toString().toUpperCase();
+    const onlineIndicators = ['ONLINE', 'GCASH', 'PAYPAL', 'CARD', 'VIRTUAL', 'ONLINE_PAYMENT'];
+    for (const ind of onlineIndicators) {
+      if (pm.includes(ind)) return 'PAID';
+    }
+
+    if (pm.includes('COD') || pm.includes('CASH')) {
+      return order.status === 'DELIVERED' ? 'PAID' : 'TO_PAY';
+    }
+
+    return order.status === 'DELIVERED' ? 'PAID' : 'TO_PAY';
+  };
+
+  const calculateTotal = (items) => {
+    const list = items || [];
+    if (!list || list.length === 0) return 0;
+    return list.reduce((sum, item) => {
+      const qty = item.quantity || item.qty || 0;
+      const price = parseFloat(item.price || 0) || 0;
+      return sum + (price * qty);
+    }, 0);
   };
 
   return (
@@ -164,7 +247,7 @@ export default function ManageOrders() {
             </div>
             <div className="stat-card">
               <h3 className="stat-number">
-                {orders.filter(o => o.status === 'PROCESSING' || o.status === 'SHIPPED').length}
+                {orders.filter(o => o.status === 'PROCESSING' || o.status === 'SHIPPING').length}
               </h3>
               <p className="stat-label">In Progress</p>
             </div>
@@ -197,10 +280,10 @@ export default function ManageOrders() {
               Processing
             </button>
             <button
-              className={`filter-tab ${statusFilter === 'SHIPPED' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('SHIPPED')}
+              className={`filter-tab ${statusFilter === 'SHIPPING' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('SHIPPING')}
             >
-              Shipped
+              Shipping
             </button>
             <button
               className={`filter-tab ${statusFilter === 'DELIVERED' ? 'active' : ''}`}
@@ -243,16 +326,20 @@ export default function ManageOrders() {
                     <div className="order-details-row">
                       <div className="order-customer">
                         <p className="detail-label">Customer</p>
-                        <p className="detail-value">{order.customer?.username || 'N/A'}</p>
+                        <p className="detail-value">{order.customer?.username || order.customer_name || 'N/A'}</p>
                       </div>
                       <div className="order-items-count">
                         <p className="detail-label">Items</p>
-                        <p className="detail-value">{order.orderItems?.length || 0} items</p>
+                        <p className="detail-value">{(order.items?.length ?? order.orderItems?.length ?? 0)} items</p>
+                      </div>
+                      <div className="order-billing">
+                        <p className="detail-label">Payment</p>
+                        <p className="detail-value">{getBillingLabel(order)}</p>
                       </div>
                       <div className="order-total">
                         <p className="detail-label">Total</p>
                         <p className="detail-value total-amount">
-                          ₱{calculateTotal(order.orderItems).toFixed(2)}
+                          ₱{calculateTotal(order.items || order.orderItems).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -293,7 +380,7 @@ export default function ManageOrders() {
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Name:</span>
-                      <span className="info-value">{selectedOrder.customer?.username || 'N/A'}</span>
+                      <span className="info-value">{selectedOrder.customer?.username || selectedOrder.customer_name || 'N/A'}</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Email:</span>
@@ -315,50 +402,101 @@ export default function ManageOrders() {
                 {/* Order Items */}
                 <div className="info-section">
                   <h3 className="section-title">Order Items</h3>
+                  <div className="payment-info">
+                    <p className="payment-method">Method: {selectedOrder.payment_method || selectedOrder.paymentMethod || 'N/A'}</p>
+                    <p className="payment-status">Billing: {getBillingLabel(selectedOrder)}</p>
+                  </div>
                   <div className="items-list">
-                    {selectedOrder.orderItems?.map((item, index) => (
-                      <div key={index} className="item-row">
-                        <div className="item-info">
-                          <p className="item-name">{item.product?.name || 'Product'}</p>
-                          <p className="item-quantity">Qty: {item.quantity}</p>
+                    {(selectedOrder.items || selectedOrder.orderItems || []).map((item, index) => {
+                      const imgSrc = item.product?.image_url || item.image_url || item.product_image || item.image || '';
+                      const title = item.product?.name || item.product_name || 'Product';
+                      const qty = item.quantity || item.qty || 0;
+                      const price = (parseFloat(item.price) || 0).toFixed(2);
+                      return (
+                        <div key={item.order_item_id || index} className="item-row">
+                          <div className="item-thumb">
+                            {imgSrc ? (
+                              <img src={imgSrc} alt={title} />
+                            ) : (
+                              <div className="no-image-small">No Image</div>
+                            )}
+                          </div>
+                          <div className="item-info">
+                            <p className="item-name">{title}</p>
+                            <p className="item-quantity">Qty: {qty}</p>
+                          </div>
+                          <p className="item-price">₱{price}</p>
                         </div>
-                        <p className="item-price">₱{parseFloat(item.price).toFixed(2)}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="order-total-row">
                     <span className="total-label">Total Amount:</span>
                     <span className="total-value">
-                      ₱{calculateTotal(selectedOrder.orderItems).toFixed(2)}
+                      ₱{calculateTotal(selectedOrder.items || selectedOrder.orderItems).toFixed(2)}
                     </span>
                   </div>
                 </div>
 
                 {/* Status Update */}
                 <div className="info-section">
-                  <h3 className="section-title">Update Order Status</h3>
+                  <h3 className="section-title">Order Actions</h3>
                   <div className="status-buttons">
-                    <button
-                      onClick={() => handleStatusUpdate(selectedOrder.order_id, 'PROCESSING')}
-                      className="status-btn btn-processing"
-                      disabled={loading || selectedOrder.status === 'PROCESSING'}
-                    >
-                      Mark as Processing
-                    </button>
-                    <button
-                      onClick={() => handleStatusUpdate(selectedOrder.order_id, 'SHIPPED')}
-                      className="status-btn btn-shipped"
-                      disabled={loading || selectedOrder.status === 'SHIPPED'}
-                    >
-                      Mark as Shipped
-                    </button>
-                    <button
-                      onClick={() => handleStatusUpdate(selectedOrder.order_id, 'DELIVERED')}
-                      className="status-btn btn-delivered"
-                      disabled={loading || selectedOrder.status === 'DELIVERED'}
-                    >
-                      Mark as Delivered
-                    </button>
+                    {selectedOrder.status === 'PENDING' && (
+                      <>
+                        <button
+                          onClick={() => handleAcceptOrder(selectedOrder.order_id)}
+                          className="status-btn btn-accept"
+                          disabled={loading}
+                        >
+                          Accept Order
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(selectedOrder.order_id)}
+                          className="status-btn btn-cancel"
+                          disabled={loading}
+                        >
+                          Cancel Order
+                        </button>
+                      </>
+                    )}
+                    {selectedOrder.status === 'PROCESSING' && (
+                      <>
+                        <button
+                          onClick={() => handleStatusUpdate(selectedOrder.order_id, 'SHIPPING')}
+                          className="status-btn btn-shipping"
+                          disabled={loading}
+                        >
+                          Mark as Shipping
+                        </button>
+                        <button
+                          onClick={() => handleCancelOrder(selectedOrder.order_id)}
+                          className="status-btn btn-cancel"
+                          disabled={loading}
+                        >
+                          Cancel Order
+                        </button>
+                      </>
+                    )}
+                    {selectedOrder.status === 'SHIPPING' && (
+                      <button
+                        onClick={() => handleStatusUpdate(selectedOrder.order_id, 'DELIVERED')}
+                        className="status-btn btn-delivered"
+                        disabled={loading}
+                      >
+                        Mark as Delivered
+                      </button>
+                    )}
+                    {selectedOrder.status === 'DELIVERED' && (
+                      <div className="status-completed">
+                        <p>Order has been delivered</p>
+                      </div>
+                    )}
+                    {selectedOrder.status === 'CANCELLED' && (
+                      <div className="status-cancelled-msg">
+                        <p>Order has been cancelled</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

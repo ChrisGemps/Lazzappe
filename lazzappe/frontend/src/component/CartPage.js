@@ -5,11 +5,13 @@ import NavBarComponent from "../component/Dashboard/NavBarComponent";
 import { Logotext2, LoginModal } from './components';
 import { Trash2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import CheckoutModal from './CheckoutModal';
 
 const CartPage = () => {
-  const { items: cartItems, updateQty, removeFromCart } = useCart();
+  const { items: cartItems, updateQty, removeFromCart, clearCart } = useCart();
   const navigate = useNavigate();
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   const updateQuantity = async (cartItemId, productId, change) => {
@@ -25,7 +27,8 @@ const CartPage = () => {
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
       console.error('Failed to update quantity', err);
-      setToast({ show: true, message: 'Failed to update quantity. Please try again.', type: 'error' });
+      const errorMsg = err?.message || 'Failed to update quantity. Please try again.';
+      setToast({ show: true, message: errorMsg, type: 'error' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     }
   };
@@ -131,6 +134,22 @@ const CartPage = () => {
     };
   }, [navigate]);
 
+  const handleCheckout = async (orderData) => {
+    try {
+      await clearCart();
+      setCheckoutOpen(false);
+      setToast({ show: true, message: `Order placed successfully! Order ID: ${orderData.order_id}`, type: 'success' });
+      setTimeout(() => {
+        setToast({ show: false, message: '', type: 'success' });
+        navigate('/dashboard');
+      }, 3000);
+    } catch (err) {
+      console.error('Error after checkout:', err);
+      setToast({ show: true, message: 'Order placed but failed to clear cart. Please refresh.', type: 'error' });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+    }
+  };
+
   return (
     <div className="cart-page-root">
       <NavBarComponent />
@@ -182,6 +201,51 @@ const CartPage = () => {
 
                 <div className="voucher-section">
                   <button disabled={cartItems.length === 0} className="checkout-btn" onClick={() => navigate('/checkout')}>Proceed to Checkout<div className="arrow-icon"></div></button>
+                  <div className="voucher-input-group">
+                    <input
+                      value={voucherInput}
+                      onChange={(e) => setVoucherInput(e.target.value)}
+                      type="text"
+                      placeholder="Enter voucher code"
+                      className="voucher-input"
+                      onFocus={() => setIsVoucherInputFocused(true)}
+                      onBlur={() => setTimeout(() => setIsVoucherInputFocused(false), 180)}
+                    />
+                    <button className="btn btn-primary" onClick={onApplyVoucher}>Apply</button>
+                  </div>
+                  {voucherError && <div className="voucher-error">{voucherError}</div>}
+                  {appliedVouchers.length > 0 && (
+                    <div className="applied-vouchers">
+                      {appliedVouchers.map(v => (
+                        <div key={v.code} className="voucher-pill">
+                          <span className="voucher-pill-badge">{v.badge}</span>
+                          <div className="voucher-pill-content">
+                            <span className="voucher-code">{v.code}</span>
+                            <span className="voucher-label">{v.label}</span>
+                          </div>
+                          <button className="remove-voucher" onClick={() => removeVoucher(v.code)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {isVoucherInputFocused && filteredSuggestions.length > 0 && (
+                    <div className="voucher-suggestions">
+                      {filteredSuggestions.map((s) => (
+                        <div
+                          key={s.code}
+                          className={`voucher-suggestion`}
+                          onMouseDown={(e) => { e.preventDefault(); applyVoucherCode(s.code); }}
+                        >
+                          <div className="voucher-suggestion-badge">{s.badge}</div>
+                          <div className="voucher-suggestion-content">
+                            <div className="voucher-suggestion-main">{s.code}</div>
+                            <div className="voucher-suggestion-sub">{s.description}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button disabled={cartItems.length === 0} className="checkout-btn" onClick={() => setCheckoutOpen(true)}>Proceed to Checkout<div className="arrow-icon"></div></button>
                   <p className="security-text">Secure checkout with encryption</p>
                 </div>
               </div>
@@ -190,6 +254,12 @@ const CartPage = () => {
         </div>
       </div>
       <LoginModal open={loginModalOpen} onClose={() => { setLoginModalOpen(false); navigate('/dashboard'); }} />
+      <CheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        totalAmount={grandTotal}
+        onCheckout={handleCheckout}
+      />
       {toast.show && (
         <div className={`cart-toast ${toast.type === 'error' ? 'error' : 'success'}`}>{toast.message}</div>
       )}
