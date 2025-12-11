@@ -42,6 +42,7 @@ public class CartController {
     private OrderRepository orderRepository;
 
     @PostMapping("/add")
+    @Transactional
     public ResponseEntity<?> addToCart(@RequestBody Map<String, Object> payload) {
         try {
             Object userIdObj = payload.get("userId");
@@ -69,8 +70,27 @@ public class CartController {
                 }
             }
 
+            // Determine existing quantity in cart (if any) to validate stock
+            int existingInCart = 0;
+            Optional<Cart> existingCartOpt = cartRepository.findByCustomer(customer);
+            if (existingCartOpt.isPresent()) {
+                Cart existingCart = existingCartOpt.get();
+                List<CartItem> existingItems = cartItemRepository.findByCart(existingCart);
+                for (CartItem it : existingItems) {
+                    if (it.getProduct().getId().equals(productId)) {
+                        existingInCart = it.getQuantity();
+                        break;
+                    }
+                }
+            }
+
+            int available = product.getStock() != null ? product.getStock() : 0;
+            if (available < existingInCart + quantity) {
+                return ResponseEntity.status(400).body(Map.of("error", "Insufficient stock", "available", available, "inCart", existingInCart));
+            }
+
             // find or create cart
-            Cart cart = cartRepository.findByCustomer(customer).orElseGet(() -> {
+            Cart cart = existingCartOpt.orElseGet(() -> {
                 Cart c = new Cart(customer);
                 return cartRepository.save(c);
             });
@@ -157,6 +177,13 @@ public class CartController {
             if (itemOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
             CartItem item = itemOpt.get();
             
+            // Validate requested quantity against product stock
+            Product product = item.getProduct();
+            int available = product.getStock() != null ? product.getStock() : 0;
+            if (quantity > available) {
+                return ResponseEntity.status(400).body(Map.of("error", "Insufficient stock", "available", available, "requested", quantity));
+            }
+
             item.setQuantity(quantity);
             item.calculateSubtotal();
             cartItemRepository.save(item);
@@ -247,19 +274,35 @@ public class CartController {
 
             Cart cart = cartOpt.get();
 
+            // Verify stock for each cart item and decrement stock atomically
+            for (CartItem cartItem : cart.getCartItems()) {
+                Product prod = cartItem.getProduct();
+                Integer stock = prod.getStock() != null ? prod.getStock() : 0;
+                if (cartItem.getQuantity() > stock) {
+                    return ResponseEntity.status(400).body(Map.of("error", "Insufficient stock for product", "product_id", prod.getId(), "available", stock, "requested", cartItem.getQuantity()));
+                }
+            }
+
             // Create order
             Order order = new Order(customer, totalAmount, shippingAddress, paymentMethod);
             orderRepository.save(order);
 
-            // Transfer cart items to order items
+            // Transfer cart items to order items and decrement product stock
             for (CartItem cartItem : cart.getCartItems()) {
+                Product prod = cartItem.getProduct();
+
                 OrderItem orderItem = new OrderItem();
                 orderItem.setOrder(order);
-                orderItem.setProduct(cartItem.getProduct());
+                orderItem.setProduct(prod);
                 orderItem.setQuantity(cartItem.getQuantity());
-                orderItem.setPrice(cartItem.getProduct().getPrice());
+                orderItem.setPrice(prod.getPrice());
                 orderItem.calculateSubtotal();
                 order.getOrderItems().add(orderItem);
+
+                // decrement stock
+                int remaining = (prod.getStock() != null ? prod.getStock() : 0) - cartItem.getQuantity();
+                prod.setStock(Math.max(0, remaining));
+                productRepository.save(prod);
             }
 
             orderRepository.save(order);
