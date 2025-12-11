@@ -41,7 +41,14 @@ public class UserController {
             String phoneNumber = (String) payload.getOrDefault("phone_number", null);
             String shippingAddress = (String) payload.get("shipping_address");
             String billingAddress = (String) payload.getOrDefault("billing_address", shippingAddress);
-            Boolean registerAsSeller = (Boolean) payload.getOrDefault("register_as_seller", false);
+            // Support multiple payload key styles from the frontend (snake_case or camelCase)
+            Object raObj = payload.getOrDefault("register_as_seller", payload.get("registerAsSeller"));
+            Boolean registerAsSeller = false;
+            if (raObj instanceof Boolean) {
+                registerAsSeller = (Boolean) raObj;
+            } else if (raObj instanceof String) {
+                registerAsSeller = Boolean.parseBoolean((String) raObj);
+            }
 
             // Check for existing username/email
             if (userRepository.existsByUsername(username)) {
@@ -62,28 +69,35 @@ public class UserController {
 
             userRepository.save(user);
 
-            // Create Customer entity
+            // Create Customer entity and link both sides
             Customer customer = new Customer();
             customer.setUser(user);
             customer.setShippingAddress(shippingAddress);
             customer.setBillingAddress(billingAddress);
-
             customerRepository.save(customer);
+            // ensure user has reference to customer so future loads reflect relation
+            user.setCustomer(customer);
 
-            // If registering as seller, create Seller entity
+            // If registering as seller, create Seller entity and link both sides
+            Seller seller = null;
             if (registerAsSeller) {
                 String storeName = (String) payload.get("store_name");
                 String storeDescription = (String) payload.get("store_description");
                 String businessLicense = (String) payload.getOrDefault("business_license", null);
 
-                Seller seller = new Seller();
+                seller = new Seller();
                 seller.setUser(user);
                 seller.setStoreName(storeName);
                 seller.setStoreDescription(storeDescription);
                 seller.setBusinessLicense(businessLicense);
 
                 sellerRepository.save(seller);
+                // set back-reference on user
+                user.setSeller(seller);
             }
+
+            // Persist user again so `currentRole` and associations are stored on the user side
+            userRepository.save(user);
 
             Map<String, String> response = new HashMap<>();
             response.put("message", "User registered successfully");
