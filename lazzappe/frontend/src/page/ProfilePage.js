@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../css/Dashboard/ProfilePage.css';
 import NavBarComponent from "../component/Dashboard/NavBarComponent";
@@ -6,15 +6,18 @@ import NavBarComponent from "../component/Dashboard/NavBarComponent";
 export default function ProfilePage() {
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080';
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [profile, setProfile] = useState({
     user_id: null,
     username: '',
     email: '',
     phone_number: '',
     role: '',
+    profilePhoto: null,
     // Customer fields
     shipping_address: '',
     billing_address: '',
@@ -131,6 +134,58 @@ export default function ProfilePage() {
   const handleCancel = () => { setEditedProfile(profile); setIsEditing(false); };
   const handleChange = (field, value) => setEditedProfile({ ...editedProfile, [field]: value });
 
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', String(profile.user_id));
+
+      const response = await fetch(`${API_BASE}/api/auth/upload-photo`, {
+        method: 'POST',
+        mode: 'cors',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload photo');
+      }
+
+      const data = await response.json();
+      
+      // Update profile with new photo URL
+      setProfile(prev => ({ ...prev, profilePhoto: data.photoUrl }));
+      setEditedProfile(prev => ({ ...prev, profilePhoto: data.photoUrl }));
+      
+      alert('Photo updated successfully!');
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      alert(err.message || 'Failed to upload photo. Please try again.');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const handlePasswordChange = async () => {
     const currentPassword = prompt('Enter your current password:'); if (!currentPassword) return;
     const newPassword = prompt('Enter new password:'); if (!newPassword) return;
@@ -219,8 +274,28 @@ export default function ProfilePage() {
         <div className="profile-wrapper">
           <div className="profile-header">
             <div className="profile-avatar-section">
-              <div className="profile-avatar"><div className="avatar-placeholder">{getInitials(profile.username)}</div></div>
-              <button className="avatar-upload-btn">Change Photo</button>
+              <div className="profile-avatar">
+                {profile.profilePhoto ? (
+                  <img src={profile.profilePhoto} alt="Profile" className="avatar-image" />
+                ) : (
+                  <div className="avatar-placeholder">{getInitials(profile.username)}</div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="photo-input-hidden"
+                disabled={uploadingPhoto}
+              />
+              <button 
+                className="avatar-upload-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+              >
+                {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
+              </button>
             </div>
             <div className="profile-header-info">
               <h1 className="profile-name">{profile.username || 'User'}</h1>

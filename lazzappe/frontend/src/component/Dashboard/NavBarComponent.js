@@ -147,7 +147,7 @@ export default function Dashboard() {
               >
                 Seller Centre
               </span>
-              <a href="#" className="nav-link">Sell on Lazzappee</a>
+              <Link to="/customer-orders" className="nav-link">My Orders</Link>
               <span>Follow us on ⓕ 𝕏 📸【ꚠ】</span>
             </div>
             <div className="navbar-top-right">
