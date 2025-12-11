@@ -52,80 +52,8 @@ const CartPage = () => {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.qty || item.quantity || 1), 0);
   const shippingBase = 150;
-
-  // Voucher system state
-  const [voucherInput, setVoucherInput] = useState('');
-  const [appliedVouchers, setAppliedVouchers] = useState([]);
-  const [voucherError, setVoucherError] = useState('');
-  const [isVoucherInputFocused, setIsVoucherInputFocused] = useState(false);
-
-  const availableVouchers = {
-    'LP40': { 
-      code: 'LP40', 
-      type: 'percent', 
-      value: 40, 
-      label: '40% off entire order', 
-      description: 'Mega Sale - Get 40% discount on all items',
-      badge: '🔥'
-    },
-    'NEW200': { 
-      code: 'NEW200', 
-      type: 'fixed', 
-      value: 200, 
-      label: '₱200 off', 
-      description: 'New customer - Save ₱200 on your order',
-      badge: '⭐'
-    },
-    'SHIPFREE': { 
-      code: 'SHIPFREE', 
-      type: 'shipping', 
-      value: shippingBase, 
-      label: 'Free shipping', 
-      description: 'Free delivery on all orders',
-      badge: '🚚'
-    }
-  };
-
-  const MAX_VOUCHERS = 3;
-
-  const applyVoucherCode = (codeIn) => {
-    const code = (codeIn || voucherInput || '').trim().toUpperCase();
-    setVoucherError('');
-    if (!code) { setVoucherError('Please enter a voucher code'); return; }
-    const voucher = availableVouchers[code];
-    if (!voucher) { setVoucherError('Invalid voucher code'); return; }
-    if (appliedVouchers.find(v => v.code === code)) { setVoucherError('Voucher already applied'); return; }
-    if (appliedVouchers.length >= MAX_VOUCHERS) { setVoucherError(`You can apply up to ${MAX_VOUCHERS} vouchers only`); return; }
-    setAppliedVouchers(prev => [...prev, voucher]);
-    setVoucherInput('');
-    setIsVoucherInputFocused(false);
-  };
-
-  const onApplyVoucher = () => applyVoucherCode(voucherInput);
-
-  const removeVoucher = (code) => {
-    setAppliedVouchers(prev => prev.filter(v => v.code !== code));
-    setVoucherError('');
-  };
-
-  // Suggestions list for the dropdown (available Vouchers not yet applied)
-  const suggestionList = Object.values(availableVouchers).filter(v => !appliedVouchers.find(a => a.code === v.code));
-  const filteredSuggestions = suggestionList.filter(v => {
-    if (!voucherInput) return true; // show all if input empty when focused
-    return v.code.toLowerCase().includes(voucherInput.toLowerCase()) || v.label.toLowerCase().includes(voucherInput.toLowerCase());
-  });
-
-  // Calculate discounts and totals
-  let discountedSubtotal = subtotal;
-  const percentVouchers = appliedVouchers.filter(v => v.type === 'percent');
-  percentVouchers.forEach(v => { discountedSubtotal *= (1 - v.value / 100); });
-  const fixedVouchers = appliedVouchers.filter(v => v.type === 'fixed');
-  const totalFixed = fixedVouchers.reduce((s, v) => s + v.value, 0);
-  discountedSubtotal = Math.max(0, discountedSubtotal - totalFixed);
-  const shippingAfterVoucher = appliedVouchers.some(v => v.type === 'shipping') ? 0 : shippingBase;
-  const totalVoucherDiscount = Math.max(0, subtotal - discountedSubtotal);
-  const taxAfterDiscount = discountedSubtotal * 0.1;
-  const grandTotal = Math.max(0, discountedSubtotal + taxAfterDiscount + shippingAfterVoucher);
+  const tax = subtotal * 0.1;
+  const grandTotal = Math.max(0, subtotal + tax + shippingBase);
 
   // Show login modal if no user is currently logged in, and verify customer role for logged-in users
   useEffect(() => {
@@ -227,11 +155,7 @@ const CartPage = () => {
       <NavBarComponent />
       <div className="cart-container">
         <div className="cart-wrapper">
-          <div className="cart-header">
-            <div className="cart-header-title">
-              <Logotext2 />
-            </div>
-          </div>
+          <div className="cart-header">My Cart</div>
 
           <div className="cart-grid">
             <div className="cart-items">
@@ -270,13 +194,13 @@ const CartPage = () => {
                 <h2 className="summary-title">Order Summary</h2>
                 <div className="summary-items">
                   <div className="summary-row"><span>Subtotal</span><span>₱{subtotal.toFixed(2)}</span></div>
-                  <div className="summary-row"><span>Tax (10%)</span><span>₱{(subtotal * 0.1).toFixed(2)}</span></div>
-                  <div className="summary-row"><span>Shipping</span><span>₱{shippingAfterVoucher.toFixed(2)}</span></div>
-                  {appliedVouchers.length > 0 && <div className="summary-row"><span>Voucher Discount</span><span>-₱{totalVoucherDiscount.toFixed(2)}</span></div>}
+                  <div className="summary-row"><span>Tax (10%)</span><span>₱{tax.toFixed(2)}</span></div>
+                  <div className="summary-row"><span>Shipping</span><span>₱{shippingBase.toFixed(2)}</span></div>
                   <div className="summary-divider"><div className="summary-total"><span>Total</span><span className="summary-total-amount">₱{grandTotal.toFixed(2)}</span></div></div>
                 </div>
 
                 <div className="voucher-section">
+                  <button disabled={cartItems.length === 0} className="checkout-btn" onClick={() => navigate('/checkout')}>Proceed to Checkout<div className="arrow-icon"></div></button>
                   <div className="voucher-input-group">
                     <input
                       value={voucherInput}

@@ -24,6 +24,9 @@ public class User {
     @Column(name = "current_role")
     private String currentRole; // "SELLER" or "CUSTOMER" - tracks the user's active role without deleting relationships
 
+    @Column(columnDefinition = "LONGTEXT")
+    private String profilePhoto; // Store base64 encoded image or image URL
+
     // Remove role string, we can determine role from linked entities
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, optional = false)
@@ -56,4 +59,7 @@ public class User {
 
     public String getCurrentRole() { return currentRole; }
     public void setCurrentRole(String currentRole) { this.currentRole = currentRole; }
+
+    public String getProfilePhoto() { return profilePhoto; }
+    public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
 }

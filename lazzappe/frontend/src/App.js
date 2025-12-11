@@ -5,6 +5,7 @@ import LoginPage from "./page/LoginPage";
 import Register from "./page/Register";
 import LandingPage from "./page/LandingPage";
 import CartPage from "./component/CartPage";
+import CheckoutPage from "./page/CheckoutPage";
 import ProductsPage from "./page/Products";
 import ProfilePage from "./page/ProfilePage";
 import SellerDashboardPage from "./page/SellerDashboard";
@@ -64,6 +65,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/profile" element={<ProfilePage/>}/>
         <Route path="/seller-dashboard" element={<SellerDashboardPage/>}/>

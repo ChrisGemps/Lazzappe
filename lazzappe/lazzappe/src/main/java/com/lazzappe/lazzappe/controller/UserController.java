@@ -9,8 +9,10 @@ import com.lazzappe.lazzappe.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,8 +57,8 @@ public class UserController {
             user.setEmail(email);
             user.setPassword(password); // TODO: Encode password with BCryptPasswordEncoder
             user.setPhone_number(phoneNumber);
-            // default active role is CUSTOMER on register
-            user.setCurrentRole("CUSTOMER");
+            // Set default role based on registration type
+            user.setCurrentRole(registerAsSeller ? "SELLER" : "CUSTOMER");
 
             userRepository.save(user);
 
@@ -128,6 +130,7 @@ public class UserController {
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
             response.put("phone_number", user.getPhone_number());
+            response.put("profilePhoto", user.getProfilePhoto());
             response.put("isCustomer", user.getCustomer() != null);
             response.put("isSeller", user.getSeller() != null);
             String role = (user.getCurrentRole() != null) ? user.getCurrentRole() : (user.getSeller() != null ? "SELLER" : "CUSTOMER");
@@ -160,6 +163,7 @@ public class UserController {
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
             response.put("phone_number", user.getPhone_number());
+            response.put("profilePhoto", user.getProfilePhoto());
             response.put("isCustomer", user.getCustomer() != null);
             response.put("isSeller", user.getSeller() != null);
             String role = (user.getCurrentRole() != null) ? user.getCurrentRole() : (user.getSeller() != null ? "SELLER" : "CUSTOMER");
@@ -363,6 +367,44 @@ public class UserController {
             System.err.println("[SWITCH-ROLE] ERROR: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to switch role: " + e.getMessage()));
+        }
+    }
+
+    // ---------------- UPLOAD PHOTO ----------------
+    @PostMapping("/upload-photo")
+    public ResponseEntity<?> uploadPhoto(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("userId") String userId) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "File is empty"));
+            }
+
+            Long id = Long.parseLong(userId);
+            var optional = userRepository.findById(id);
+            if (optional.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            User user = optional.get();
+
+            // Convert file to base64
+            String base64Photo = Base64.getEncoder().encodeToString(file.getBytes());
+            String dataUri = "data:" + file.getContentType() + ";base64," + base64Photo;
+
+            // Save to database
+            user.setProfilePhoto(dataUri);
+            userRepository.save(user);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Photo uploaded successfully");
+            response.put("photoUrl", dataUri);
+            return ResponseEntity.ok(response);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid userId format"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to upload photo: " + e.getMessage()));
         }
     }
 }

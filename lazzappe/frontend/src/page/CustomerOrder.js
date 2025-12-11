@@ -68,10 +68,23 @@ export default function CustomerOrders() {
         setOrders(data);
         setFilteredOrders(data);
       } else {
-        console.error('Failed to fetch orders');
+        // Fallback to localStorage if API not available
+        const storedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const userOrders = storedOrders.filter(order => String(order.customer_id) === String(customerId));
+        setOrders(userOrders);
+        setFilteredOrders(userOrders);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
+      // Fallback to localStorage
+      try {
+        const storedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+        const userOrders = storedOrders.filter(order => String(order.customer_id) === String(customerId));
+        setOrders(userOrders);
+        setFilteredOrders(userOrders);
+      } catch (localErr) {
+        console.error('Error reading from localStorage:', localErr);
+      }
     } finally {
       setLoading(false);
     }
