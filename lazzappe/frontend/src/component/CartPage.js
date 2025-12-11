@@ -13,6 +13,22 @@ const CartPage = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  
+  // Voucher state
+  const [voucherInput, setVoucherInput] = useState('');
+  const [isVoucherInputFocused, setIsVoucherInputFocused] = useState(false);
+  const [voucherError, setVoucherError] = useState('');
+  const [appliedVouchers, setAppliedVouchers] = useState([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState([]);
+
+  // Sample voucher data
+  const allVouchers = [
+    { code: 'WELCOME10', badge: '10%', label: 'Welcome Discount', description: '10% off on first purchase' },
+    { code: 'SAVE20', badge: '20%', label: 'Save More', description: '20% off on orders above ₱500' },
+    { code: 'SHIP100', badge: 'FREE', label: 'Free Shipping', description: 'Free shipping on all orders' },
+    { code: 'SUMMER15', badge: '15%', label: 'Summer Sale', description: '15% off on all items' },
+    { code: 'FLASH5', badge: '5%', label: 'Flash Deal', description: '5% instant discount' }
+  ];
 
   const updateQuantity = async (cartItemId, productId, change) => {
     try {
@@ -48,6 +64,62 @@ const CartPage = () => {
       setToast({ show: true, message: 'Failed to remove item. Please try again.', type: 'error' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     }
+  };
+
+  // Handle voucher input change and filter suggestions
+  const handleVoucherInputChange = (value) => {
+    setVoucherInput(value);
+    setVoucherError('');
+    
+    if (value.trim().length > 0) {
+      const filtered = allVouchers.filter(v => 
+        v.code.toUpperCase().includes(value.toUpperCase()) &&
+        !appliedVouchers.find(av => av.code === v.code)
+      );
+      setFilteredSuggestions(filtered);
+    } else {
+      setFilteredSuggestions([]);
+    }
+  };
+
+  // Apply voucher by code
+  const applyVoucherCode = (code) => {
+    const voucher = allVouchers.find(v => v.code === code);
+    if (!voucher) {
+      setVoucherError('Invalid voucher code');
+      return;
+    }
+
+    if (appliedVouchers.find(v => v.code === code)) {
+      setVoucherError('This voucher is already applied');
+      return;
+    }
+
+    setAppliedVouchers([...appliedVouchers, voucher]);
+    setVoucherInput('');
+    setFilteredSuggestions([]);
+    setVoucherError('');
+    setToast({ show: true, message: `Voucher ${code} applied!`, type: 'success' });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
+  };
+
+  // Handle apply button click
+  const onApplyVoucher = () => {
+    const code = voucherInput.trim().toUpperCase();
+    
+    if (!code) {
+      setVoucherError('Please enter a voucher code');
+      return;
+    }
+
+    applyVoucherCode(code);
+  };
+
+  // Remove an applied voucher
+  const removeVoucher = (code) => {
+    setAppliedVouchers(appliedVouchers.filter(v => v.code !== code));
+    setToast({ show: true, message: `Voucher ${code} removed`, type: 'success' });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.qty || item.quantity || 1), 0);
@@ -200,11 +272,11 @@ const CartPage = () => {
                 </div>
 
                 <div className="voucher-section">
-                  <button disabled={cartItems.length === 0} className="checkout-btn" onClick={() => navigate('/checkout')}>Proceed to Checkout<div className="arrow-icon"></div></button>
+                  
                   <div className="voucher-input-group">
                     <input
                       value={voucherInput}
-                      onChange={(e) => setVoucherInput(e.target.value)}
+                      onChange={(e) => handleVoucherInputChange(e.target.value)}
                       type="text"
                       placeholder="Enter voucher code"
                       className="voucher-input"
