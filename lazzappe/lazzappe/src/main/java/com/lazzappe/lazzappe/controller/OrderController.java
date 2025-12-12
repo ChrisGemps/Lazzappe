@@ -88,12 +88,17 @@ public class OrderController {
 
             Order order = orderOpt.get();
             order.setStatus(status);
+            // If marking as delivered, set billing status to PAID
+            if ("DELIVERED".equals(status)) {
+                order.setBillingStatus("PAID");
+            }
             orderRepository.save(order);
 
             Map<String, Object> res = new HashMap<>();
             res.put("message", "Order status updated");
             res.put("order_id", order.getId());
             res.put("status", order.getStatus());
+            res.put("billing_status", order.getBillingStatus());
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             e.printStackTrace();
