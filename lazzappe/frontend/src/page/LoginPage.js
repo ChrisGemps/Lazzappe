@@ -72,9 +72,10 @@ const LoginForm = () => {
 
     // Save user info and username and notify other components
     try {
+      let userToStore = null;
       if (data) {
         // Build a clean object to store in localStorage
-        const userToStore = {
+        userToStore = {
           user_id: data.user_id || data.user?.user_id || null,
           username: data.username || data.user?.username || derivedUsername,
           email: data.email || data.user?.email || null,
@@ -96,6 +97,39 @@ const LoginForm = () => {
 
       // notify other tabs and components about login
       window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: derivedUsername }));
+
+      // After login, switch role to SELLER then back to CUSTOMER to initialize seller profile
+      if (userToStore) {
+        try {
+          // Switch to SELLER
+          const switchToSellerResponse = await fetch("http://localhost:8080/api/auth/switch-role", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: String(userToStore.user_id), role: 'SELLER' })
+          });
+          if (switchToSellerResponse.ok) {
+            const switchData = await switchToSellerResponse.json();
+            userToStore.role = 'SELLER';
+            userToStore.seller_id = switchData.seller_id || null;
+            localStorage.setItem("user", JSON.stringify(userToStore));
+          }
+
+          // Switch back to CUSTOMER
+          const switchToCustomerResponse = await fetch("http://localhost:8080/api/auth/switch-role", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: String(userToStore.user_id), role: 'CUSTOMER' })
+          });
+          if (switchToCustomerResponse.ok) {
+            const switchBackData = await switchToCustomerResponse.json();
+            userToStore.role = 'CUSTOMER';
+            userToStore.seller_id = null;
+            localStorage.setItem("user", JSON.stringify(userToStore));
+          }
+        } catch (e) {
+          console.warn('Failed to initialize roles after login:', e);
+        }
+      }
     } catch (e) {
       console.warn('Unable to persist user to localStorage', e);
     }
