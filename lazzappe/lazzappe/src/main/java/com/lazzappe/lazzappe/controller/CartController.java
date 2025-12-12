@@ -285,6 +285,10 @@ public class CartController {
 
             // Create order
             Order order = new Order(customer, totalAmount, shippingAddress, paymentMethod);
+            // Set billing status to PAID for ONLINE or LAZZAPPEEPAY
+            if ("ONLINE".equals(paymentMethod) || "LAZZAPPEEPAY".equals(paymentMethod)) {
+                order.setBillingStatus("PAID");
+            }
             orderRepository.save(order);
 
             // Transfer cart items to order items and decrement product stock
@@ -318,6 +322,7 @@ public class CartController {
             res.put("total_amount", order.getTotalAmount());
             res.put("payment_method", order.getPaymentMethod());
             res.put("status", order.getStatus());
+            res.put("billing_status", order.getBillingStatus());
 
             return ResponseEntity.ok(res);
         } catch (Exception e) {
