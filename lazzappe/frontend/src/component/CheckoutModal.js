@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../css/Dashboard/CheckoutModal.css';
 
-const CheckoutModal = ({ open, onClose, totalAmount, onCheckout }) => {
+const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) => {
   const [paymentMethod, setPaymentMethod] = useState('COD'); // COD or ONLINE
   const [shippingAddress, setShippingAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -173,6 +173,8 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout }) => {
 
       setSuccess(data);
       setLoading(false);
+      // Clear the cart immediately after successful checkout
+      if (clearCart) clearCart();
       // if coins were used, update local wallet immediately and notify other components
       try {
         if (typeof coinsToApply === 'number' && coinsToApply > 0) {
@@ -206,7 +208,7 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout }) => {
 
   if (success) {
     return (
-      <div className="checkout-modal-overlay" onClick={onClose}>
+      <div className="checkout-modal-overlay">
         <div className="checkout-modal" onClick={(e) => e.stopPropagation()}>
           <div className="success-container">
             <div className="success-icon">✓</div>

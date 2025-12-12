@@ -177,14 +177,16 @@ export function CartProvider({ children }) {
 
   const clearCart = async () => {
     const userId = getUserId();
+    setItems([]); // clear local immediately
+    try {
+      localStorage.setItem('cart_cleared', 'true'); // flag to prevent loading server cart on refresh
+    } catch (e) {}
     if (!userId) {
-      setItems([]);
       return;
     }
     try {
       const res = await fetch(`http://localhost:8080/api/cart/${userId}/clear`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to clear cart');
-      setItems([]);
     } catch (err) {
       console.error('Clear cart failed:', err);
     }
@@ -205,6 +207,13 @@ export function CartProvider({ children }) {
 
   // load server-side cart (by userId or username)
   const loadServerCart = async () => {
+    // If cart was just cleared, don't load from server to keep it empty
+    try {
+      if (localStorage.getItem('cart_cleared')) {
+        localStorage.removeItem('cart_cleared');
+        return;
+      }
+    } catch (e) {}
     const userId = getUserId();
     try {
       let res;
