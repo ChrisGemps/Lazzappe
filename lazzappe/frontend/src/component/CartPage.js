@@ -240,20 +240,39 @@ const CartPage = () => {
   }, [navigate]);
 
   const handleCheckout = async (orderData) => {
-    try {
-      await clearCart();
-      setCheckoutOpen(false);
-      setToast({ show: true, message: `Order placed successfully! Order ID: ${orderData.order_id}`, type: 'success' });
-      setTimeout(() => {
-        setToast({ show: false, message: '', type: 'success' });
-        navigate('/dashboard');
-      }, 3000);
-    } catch (err) {
-      console.error('Error after checkout:', err);
-      setToast({ show: true, message: 'Order placed but failed to clear cart. Please refresh.', type: 'error' });
-      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  try {
+
+    // Call removeItem() for every cart item
+    for (const item of cartItems) {
+      await removeItem(item.cartItemId);
     }
-  };
+
+    // Also clear final state (to be safe)
+    await clearCart();
+
+    setCheckoutOpen(false);
+    setToast({
+      show: true,
+      message: `Order placed successfully! Order ID: ${orderData.order_id}`,
+      type: 'success'
+    });
+
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+      navigate('/dashboard');
+    }, 3000);
+
+  } catch (err) {
+    console.error('Error after checkout:', err);
+    setToast({
+      show: true,
+      message: 'Order placed but failed to clear cart. Please refresh.',
+      type: 'error'
+    });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  }
+};
+
 
   return (
     <div className="cart-page-root">
@@ -367,6 +386,7 @@ const CartPage = () => {
         onClose={() => setCheckoutOpen(false)}
         totalAmount={grandTotal}
         onCheckout={handleCheckout}
+        clearCart={clearCart}
       />
       {toast.show && (
         <div className={`cart-toast ${toast.type === 'error' ? 'error' : 'success'}`}>{toast.message}</div>
