@@ -18,10 +18,8 @@ export default function ProfilePage() {
     phone_number: '',
     role: '',
     profilePhoto: null,
-    // Customer fields
     shipping_address: '',
     billing_address: '',
-    // Seller fields
     store_name: '',
     store_description: '',
     business_license: ''
@@ -39,38 +37,51 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState('');
   const [walletBalance, setWalletBalance] = useState(0);
 
+  // Helper to get JWT token
+  const getToken = () => {
+    return localStorage.getItem('token');
+  };
+
+  // Helper to get auth headers
+  const getAuthHeaders = () => {
+    const token = getToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  };
+
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        setError('User not logged in. Please login first.');
-        setLoading(false);
-        setTimeout(() => navigate('/login'), 2000);
-        return;
-      }
-
-      const user = JSON.parse(userStr);
-      const userId = user.id || user.user_id || user.userId;
-
-      if (!userId) {
-        setError('User ID not found. Please login again.');
+      const token = getToken();
+      
+      if (!token) {
+        setError('Not authenticated. Please login first.');
         setLoading(false);
         setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
       const response = await fetch(`${API_BASE}/api/auth/profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        mode: 'cors',
-        body: JSON.stringify({ userId: String(userId) })
+        method: 'GET',
+        headers: getAuthHeaders(),
+        mode: 'cors'
       });
+
+      if (response.status === 401 || response.status === 403) {
+        setError('Session expired. Please login again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoading(false);
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
 
       if (!response.ok) throw new Error('Failed to fetch profile');
       const data = await response.json();
 
-      // merge server data with local defaults to ensure all fields exist
       setProfile(prev => ({ ...prev, ...data }));
       setEditedProfile(prev => ({ ...prev, ...data }));
       setError(null);
@@ -111,12 +122,19 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/api/auth/update-profile`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const token = getToken();
+      
+      if (!token) {
+        alert('Session expired. Please login again.');
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/api/auth/profile`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
         mode: 'cors',
         body: JSON.stringify({
-          userId: String(editedProfile.user_id),
           username: editedProfile.username,
           email: editedProfile.email,
           phone_number: editedProfile.phone_number,
@@ -128,17 +146,24 @@ export default function ProfilePage() {
         })
       });
 
+      if (response.status === 401 || response.status === 403) {
+        alert('Session expired. Please login again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        return;
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
       const data = await response.json();
-      // refresh from server to ensure we display persisted values
+      
       try {
         await fetchProfile();
       } catch (e) {
-        // fallback to returned data if fetchProfile fails
         setProfile(data);
       }
 
@@ -169,13 +194,11 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select a valid image file');
       return;
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('File size must be less than 5MB');
       return;
@@ -183,15 +206,33 @@ export default function ProfilePage() {
 
     try {
       setUploadingPhoto(true);
+      const token = getToken();
+      
+      if (!token) {
+        alert('Session expired. Please login again.');
+        navigate('/login');
+        return;
+      }
+
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('userId', String(profile.user_id));
 
       const response = await fetch(`${API_BASE}/api/auth/upload-photo`, {
         method: 'POST',
         mode: 'cors',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData
       });
+
+      if (response.status === 401 || response.status === 403) {
+        alert('Session expired. Please login again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -200,7 +241,6 @@ export default function ProfilePage() {
 
       const data = await response.json();
       
-      // Update profile with new photo URL
       setProfile(prev => ({ ...prev, profilePhoto: data.photoUrl }));
       setEditedProfile(prev => ({ ...prev, profilePhoto: data.photoUrl }));
       
@@ -210,7 +250,6 @@ export default function ProfilePage() {
       alert(err.message || 'Failed to upload photo. Please try again.');
     } finally {
       setUploadingPhoto(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -239,16 +278,33 @@ export default function ProfilePage() {
 
     try {
       setPasswordLoading(true);
+      const token = getToken();
+      
+      if (!token) {
+        setPasswordError('Session expired. Please login again.');
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+
       const response = await fetch(`${API_BASE}/api/auth/change-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         mode: 'cors',
         body: JSON.stringify({
-          userId: String(profile.user_id),
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword
         })
       });
+
+      if (response.status === 401 || response.status === 403) {
+        setPasswordError('Session expired. Please login again.');
+        setTimeout(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        }, 2000);
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -272,19 +328,35 @@ export default function ProfilePage() {
   };
 
   const handleRoleSwitch = async (newRole) => {
-    // Ask for confirmation before switching roles
     const ok = window.confirm(`Switch role to ${newRole}? This may change available features.`);
     if (!ok) return;
 
     try {
       setRoleSwitching(true);
-      console.log(`[RoleSwitch] Starting role switch to ${newRole} for user ${profile.user_id}`);
+      const token = getToken();
+      
+      if (!token) {
+        alert('Session expired. Please login again.');
+        navigate('/login');
+        return;
+      }
+
+      console.log(`[RoleSwitch] Starting role switch to ${newRole}`);
       
       const response = await fetch(`${API_BASE}/api/auth/switch-role`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        headers: getAuthHeaders(),
         mode: 'cors',
-        body: JSON.stringify({ userId: String(profile.user_id), role: newRole })
+        body: JSON.stringify({ role: newRole })
       });
+
+      if (response.status === 401 || response.status === 403) {
+        alert('Session expired. Please login again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        return;
+      }
 
       if (!response.ok) { 
         const errorData = await response.json(); 
@@ -295,14 +367,12 @@ export default function ProfilePage() {
       const data = await response.json();
       console.log('[RoleSwitch] Response received:', data);
       
-      // Update profile immediately with response data
       const updatedProfile = { ...profile, ...data, role: data.role };
       setProfile(updatedProfile);
       setEditedProfile(updatedProfile);
       
       console.log('[RoleSwitch] Profile updated to role:', data.role);
       
-      // Update localStorage with new role
       const userStr = localStorage.getItem('user'); 
       if (userStr) { 
         const user = JSON.parse(userStr); 
@@ -312,9 +382,7 @@ export default function ProfilePage() {
         console.log('[RoleSwitch] LocalStorage updated:', user);
       }
       
-      // Notify other parts of the app that products may have changed
       try { window.dispatchEvent(new CustomEvent('lazzappe:products-changed', { detail: { userId: profile.user_id } })); } catch (e) {}
-      // Also re-load the cart by signaling username change
       try { window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: data.username })); } catch (e) {}
       
       console.log('[RoleSwitch] Role switch completed successfully');
@@ -429,7 +497,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Customer view */}
             {isCustomer && (
               <div className="profile-card">
                 <div className="card-header">
@@ -444,7 +511,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Seller view */}
             {isSeller && (
               <div className="profile-card">
                 <div className="card-header">
@@ -472,7 +538,6 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      {/* Password Change Modal */}
       {passwordModalOpen && (
         <div className="modal-overlay" onClick={() => setPasswordModalOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>

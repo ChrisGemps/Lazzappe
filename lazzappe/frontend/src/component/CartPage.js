@@ -13,7 +13,7 @@ const CartPage = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-  
+
   // Voucher state
   const [voucherInput, setVoucherInput] = useState('');
   const [isVoucherInputFocused, setIsVoucherInputFocused] = useState(false);
@@ -21,8 +21,7 @@ const CartPage = () => {
   const [appliedVouchers, setAppliedVouchers] = useState([]);
   const [filteredSuggestions, setFilteredSuggestions] = useState([]);
 
-  // Sample voucher data (type: 'percent' | 'fixed' | 'shipping')
-  // Note: one voucher is intentionally hidden from suggestions: HAPPYHOLAZZAPPEE
+  // Sample voucher data
   const allVouchers = [
     { code: 'WELCOME10', type: 'percent', value: 10, badge: '10%', label: 'Welcome Discount', description: '10% off on first purchase' },
     { code: 'SAVE20', type: 'percent', value: 20, badge: '20%', label: 'Save More', description: '20% off on orders above ₱500' },
@@ -30,25 +29,20 @@ const CartPage = () => {
     { code: 'SUMMER15', type: 'percent', value: 15, badge: '15%', label: 'Summer Sale', description: '15% off on all items' },
     { code: 'FLASH5', type: 'percent', value: 5, badge: '5%', label: 'Flash Deal', description: '5% instant discount' },
     { code: 'NEW200', type: 'fixed', value: 200, badge: '₱200', label: '₱200 off', description: '₱200 off your order' },
-    // Hidden/secret voucher (not shown in suggestions)
     { code: 'HAPPYHOLIZZAPPEE', type: 'percent', value: 40, badge: '🎁', label: 'Secret Gift: 40% OFF', description: 'Hidden promo for special users', hidden: true }
   ];
 
   const updateQuantity = async (cartItemId, productId, change) => {
     try {
       const item = cartItems.find(i => i.cartItemId === cartItemId);
-      if (!item) {
-        console.error('Item not found for cartItemId:', cartItemId);
-        return;
-      }
+      if (!item) return;
       const newQty = Math.max(1, (item.qty || item.quantity || 1) + change);
       await updateQty(item.id, newQty);
       setToast({ show: true, message: 'Quantity updated', type: 'success' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     } catch (err) {
       console.error('Failed to update quantity', err);
-      const errorMsg = err?.message || 'Failed to update quantity. Please try again.';
-      setToast({ show: true, message: errorMsg, type: 'error' });
+      setToast({ show: true, message: 'Failed to update quantity. Please try again.', type: 'error' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
     }
   };
@@ -56,10 +50,7 @@ const CartPage = () => {
   const removeItem = async (cartItemId) => {
     try {
       const item = cartItems.find(i => i.cartItemId === cartItemId);
-      if (!item) {
-        console.error('Item not found for cartItemId:', cartItemId);
-        return;
-      }
+      if (!item) return;
       await removeFromCart(item.id);
       setToast({ show: true, message: 'Item removed from cart', type: 'success' });
       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
@@ -70,11 +61,9 @@ const CartPage = () => {
     }
   };
 
-  // Handle voucher input change and filter suggestions
   const handleVoucherInputChange = (value) => {
     setVoucherInput(value);
     setVoucherError('');
-    
     if (value.trim().length > 0) {
       const filtered = allVouchers.filter(v => 
         v.code.toUpperCase().includes(value.toUpperCase()) &&
@@ -87,7 +76,6 @@ const CartPage = () => {
     }
   };
 
-  // Show suggestions on focus (even when input is empty) but exclude hidden and already-applied vouchers
   const handleVoucherFocus = () => {
     setIsVoucherInputFocused(true);
     if (voucherInput.trim().length === 0) {
@@ -96,19 +84,16 @@ const CartPage = () => {
     }
   };
 
-  // Apply voucher by code
   const applyVoucherCode = (code) => {
     const voucher = allVouchers.find(v => v.code === code);
     if (!voucher) {
       setVoucherError('Invalid voucher code');
       return;
     }
-
     if (appliedVouchers.find(v => v.code === code)) {
       setVoucherError('This voucher is already applied');
       return;
     }
-
     setAppliedVouchers([...appliedVouchers, voucher]);
     setVoucherInput('');
     setFilteredSuggestions([]);
@@ -117,19 +102,15 @@ const CartPage = () => {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2000);
   };
 
-  // Handle apply button click
   const onApplyVoucher = () => {
     const code = voucherInput.trim().toUpperCase();
-    
     if (!code) {
       setVoucherError('Please enter a voucher code');
       return;
     }
-
     applyVoucherCode(code);
   };
 
-  // Remove an applied voucher
   const removeVoucher = (code) => {
     setAppliedVouchers(appliedVouchers.filter(v => v.code !== code));
     setToast({ show: true, message: `Voucher ${code} removed`, type: 'success' });
@@ -139,16 +120,10 @@ const CartPage = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.qty || item.quantity || 1), 0);
   const shippingBase = 150;
 
-  // Calculate voucher discounts
-  const percentTotal = appliedVouchers
-    .filter(v => v.type === 'percent')
-    .reduce((sum, v) => sum + (v.value || 0), 0);
-  const fixedTotal = appliedVouchers
-    .filter(v => v.type === 'fixed')
-    .reduce((sum, v) => sum + (v.value || 0), 0);
+  const percentTotal = appliedVouchers.filter(v => v.type === 'percent').reduce((sum, v) => sum + (v.value || 0), 0);
+  const fixedTotal = appliedVouchers.filter(v => v.type === 'fixed').reduce((sum, v) => sum + (v.value || 0), 0);
   const hasFreeShipping = appliedVouchers.some(v => v.type === 'shipping');
 
-  // Apply percent discount first, then fixed discount
   const percentMultiplier = Math.max(0, 1 - Math.min(percentTotal, 100) / 100);
   const discountedSubtotalBeforeFixed = subtotal * percentMultiplier;
   const discountedSubtotal = Math.max(0, discountedSubtotalBeforeFixed - fixedTotal);
@@ -157,122 +132,72 @@ const CartPage = () => {
   const shippingAfterVoucher = hasFreeShipping ? 0 : shippingBase;
 
   const totalVoucherDiscount = Math.max(0, subtotal - discountedSubtotal) + (hasFreeShipping ? shippingBase : 0);
-
   const grandTotal = Math.max(0, discountedSubtotal + tax + shippingAfterVoucher);
 
-  // Show login modal if no user is currently logged in, and verify customer role for logged-in users
+  // FIXED: fetch profile using GET, not POST, to avoid 403
   useEffect(() => {
     const checkUserStatus = async () => {
-      const username = localStorage.getItem('username') || null;
-      if (!username) {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
         setLoginModalOpen(true);
         return;
       }
 
-      // Check if logged-in user is in seller role (which shouldn't be buying)
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          const userId = user.id || user.user_id;
-
-          const response = await fetch('http://localhost:8080/api/auth/profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: String(userId) })
-          });
-
-          if (response.ok) {
-            const profileData = await response.json();
-            // If user is SELLER only, redirect them
-            if (profileData.role === 'SELLER') {
-              alert('Sellers cannot purchase items. Please switch to Customer role in your profile to use the cart.');
-              navigate('/profile');
-            }
+      try {
+        const response = await fetch('http://localhost:8080/api/auth/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
-        } catch (error) {
-          console.error('Error verifying customer role:', error);
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          if (profileData.role === 'SELLER') {
+            alert('Sellers cannot purchase items. Please switch to Customer role in your profile.');
+            navigate('/profile');
+          }
+        } else {
+          console.error('Failed to fetch profile:', response.status);
         }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
       }
     };
 
     checkUserStatus();
   }, [navigate]);
 
-  // Close login modal if user logs in (same tab or other tabs), and re-check role on username change
-  useEffect(() => {
-    const handler = () => {
-      if (localStorage.getItem('username')) {
-        setLoginModalOpen(false);
-        // Re-check user role when username changes (happens after role switch)
-        const checkRole = async () => {
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            try {
-              const user = JSON.parse(userStr);
-              const userId = user.id || user.user_id;
-              const response = await fetch('http://localhost:8080/api/auth/profile', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: String(userId) })
-              });
-              if (response.ok) {
-                const profileData = await response.json();
-                if (profileData.role === 'SELLER') {
-                  alert('Sellers cannot purchase items. Please switch to Customer role in your profile to use the cart.');
-                  navigate('/profile');
-                }
-              }
-            } catch (error) {
-              console.error('Error re-checking role:', error);
-            }
-          }
-        };
-        checkRole();
-      }
-    };
-    window.addEventListener('storage', handler);
-    window.addEventListener('lazzappe:username-changed', handler);
-    return () => {
-      window.removeEventListener('storage', handler);
-      window.removeEventListener('lazzappe:username-changed', handler);
-    };
-  }, [navigate]);
-
   const handleCheckout = async (orderData) => {
-  try {
+    try {
+      for (const item of cartItems) {
+        await removeItem(item.cartItemId);
+      }
+      await clearCart();
 
-    // Call removeItem() for every cart item
-    for (const item of cartItems) {
-      await removeItem(item.cartItemId);
+      setCheckoutOpen(false);
+      setToast({
+        show: true,
+        message: `Order placed successfully! Order ID: ${orderData.order_id}`,
+        type: 'success'
+      });
+
+      setTimeout(() => {
+        setToast({ show: false, message: '', type: 'success' });
+        navigate('/dashboard');
+      }, 3000);
+
+    } catch (err) {
+      console.error('Error after checkout:', err);
+      setToast({
+        show: true,
+        message: 'Order placed but failed to clear cart. Please refresh.',
+        type: 'error'
+      });
+      setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
     }
-
-    // Also clear final state (to be safe)
-    await clearCart();
-
-    setCheckoutOpen(false);
-    setToast({
-      show: true,
-      message: `Order placed successfully! Order ID: ${orderData.order_id}`,
-      type: 'success'
-    });
-
-    setTimeout(() => {
-      setToast({ show: false, message: '', type: 'success' });
-      navigate('/dashboard');
-    }, 3000);
-
-  } catch (err) {
-    console.error('Error after checkout:', err);
-    setToast({
-      show: true,
-      message: 'Order placed but failed to clear cart. Please refresh.',
-      type: 'error'
-    });
-    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
-  }
-};
-
+  };
 
   return (
     <div className="cart-page-root">
@@ -280,7 +205,6 @@ const CartPage = () => {
       <div className="cart-container">
         <div className="cart-wrapper">
           <div className="cart-header">My Cart</div>
-
           <div className="cart-grid">
             <div className="cart-items">
               {cartItems.map(item => (
@@ -327,7 +251,6 @@ const CartPage = () => {
                 </div>
 
                 <div className="voucher-section">
-                  
                   <div className="voucher-input-group">
                     <input
                       value={voucherInput}
@@ -380,6 +303,7 @@ const CartPage = () => {
           </div>
         </div>
       </div>
+
       <LoginModal open={loginModalOpen} onClose={() => { setLoginModalOpen(false); navigate('/dashboard'); }} />
       <CheckoutModal
         open={checkoutOpen}
@@ -393,6 +317,6 @@ const CartPage = () => {
       )}
     </div>
   );
-}
+};
 
 export default CartPage;

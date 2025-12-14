@@ -14,6 +14,8 @@ import com.lazzappe.lazzappe.repository.ProductRepository;
 import com.lazzappe.lazzappe.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,12 +24,11 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class CartController {
 
     @Autowired
     private UserRepository userRepository;
-
 
     @Autowired
     private ProductRepository productRepository;
@@ -41,36 +42,70 @@ public class CartController {
     @Autowired
     private OrderRepository orderRepository;
 
+    /**
+     * Helper method to get the authenticated user from Spring Security context
+     */
+    private User getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
+        
+        // Assuming your UserDetails implementation stores username/email
+        String username = auth.getName();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        return userOpt.orElse(null);
+    }
+
+    /**
+     * Verify that the authenticated user is a customer
+     */
+    private Customer getAuthenticatedCustomer() {
+        User user = getAuthenticatedUser();
+        if (user == null) {
+            return null;
+        }
+        return user.getCustomer();
+    }
+
     @PostMapping("/add")
     @Transactional
     public ResponseEntity<?> addToCart(@RequestBody Map<String, Object> payload) {
         try {
-            Object userIdObj = payload.get("userId");
+            // Get authenticated user instead of trusting request
+            Customer customer = getAuthenticatedCustomer();
+            if (customer == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             Object productIdObj = payload.get("productId");
             Object quantityObj = payload.getOrDefault("quantity", 1);
-            if (userIdObj == null || productIdObj == null) return ResponseEntity.badRequest().body(Map.of("error", "userId and productId are required"));
-            Long userId = Long.parseLong(userIdObj.toString());
+            
+            if (productIdObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "productId is required"));
+            }
+            
             Long productId = Long.parseLong(productIdObj.toString());
             Integer quantity = Integer.parseInt(quantityObj.toString());
 
-            Optional<User> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = userOpt.get();
-            if (user.getCustomer() == null) return ResponseEntity.status(400).body(Map.of("error", "User is not a customer"));
-            Customer customer = user.getCustomer();
+            if (quantity <= 0) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Quantity must be greater than 0"));
+            }
 
             Optional<Product> productOpt = productRepository.findById(productId);
-            if (productOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Product not found"));
+            if (productOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Product not found"));
+            }
             Product product = productOpt.get();
 
             // Block adding own product to cart
-            if (product.getSeller() != null && product.getSeller().getUser() != null && product.getSeller().getUser().getUser_id() != null) {
-                if (Objects.equals(product.getSeller().getUser().getUser_id(), userId)) {
+            if (product.getSeller() != null && product.getSeller().getUser() != null) {
+                if (Objects.equals(product.getSeller().getUser().getUser_id(), customer.getUser().getUser_id())) {
                     return ResponseEntity.status(403).body(Map.of("error", "Cannot add your own product to the cart"));
                 }
             }
 
-            // Determine existing quantity in cart (if any) to validate stock
+            // Check existing quantity in cart
             int existingInCart = 0;
             Optional<Cart> existingCartOpt = cartRepository.findByCustomer(customer);
             if (existingCartOpt.isPresent()) {
@@ -86,21 +121,29 @@ public class CartController {
 
             int available = product.getStock() != null ? product.getStock() : 0;
             if (available < existingInCart + quantity) {
-                return ResponseEntity.status(400).body(Map.of("error", "Insufficient stock", "available", available, "inCart", existingInCart));
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Insufficient stock", 
+                    "available", available, 
+                    "inCart", existingInCart
+                ));
             }
 
-            // find or create cart
+            // Find or create cart
             Cart cart = existingCartOpt.orElseGet(() -> {
                 Cart c = new Cart(customer);
                 return cartRepository.save(c);
             });
 
-            // check existing item
+            // Check existing item
             List<CartItem> items = cartItemRepository.findByCart(cart);
             CartItem found = null;
             for (CartItem it : items) {
-                if (it.getProduct().getId().equals(productId)) { found = it; break; }
+                if (it.getProduct().getId().equals(productId)) {
+                    found = it;
+                    break;
+                }
             }
+            
             if (found != null) {
                 found.setQuantity(found.getQuantity() + quantity);
                 found.calculateSubtotal();
@@ -114,7 +157,7 @@ public class CartController {
             Map<String, Object> res = new HashMap<>();
             Map<String, Object> itemMap = new HashMap<>();
             itemMap.put("cart_item_id", found.getId());
-            Map<String,Object> pmap = new HashMap<>();
+            Map<String, Object> pmap = new HashMap<>();
             pmap.put("product_id", product.getId());
             pmap.put("name", product.getName());
             pmap.put("description", product.getDescription());
@@ -131,27 +174,32 @@ public class CartController {
         }
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getCart(@PathVariable Long userId) {
+    @GetMapping
+    public ResponseEntity<?> getCart() {
         try {
-            Optional<User> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = userOpt.get();
-            if (user.getCustomer() == null) return ResponseEntity.status(400).body(Map.of("error", "User is not a customer"));
-            Customer customer = user.getCustomer();
+            // Get authenticated user's cart only
+            Customer customer = getAuthenticatedCustomer();
+            if (customer == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             Optional<Cart> cartOpt = cartRepository.findByCustomer(customer);
-            if (cartOpt.isEmpty()) return ResponseEntity.ok(Collections.emptyList());
+            if (cartOpt.isEmpty()) {
+                return ResponseEntity.ok(Collections.emptyList());
+            }
+            
             Cart cart = cartOpt.get();
             List<Map<String, Object>> out = new ArrayList<>();
             for (CartItem it : cart.getCartItems()) {
                 Map<String, Object> m = new HashMap<>();
                 m.put("cart_item_id", it.getId());
-                Map<String,Object> p = new HashMap<>();
+                Map<String, Object> p = new HashMap<>();
                 p.put("product_id", it.getProduct().getId());
                 p.put("name", it.getProduct().getName());
                 p.put("description", it.getProduct().getDescription());
                 p.put("price", it.getProduct().getPrice());
                 p.put("image_url", it.getProduct().getImageUrl());
+                p.put("stock", it.getProduct().getStock());
                 m.put("product", p);
                 m.put("quantity", it.getQuantity());
                 out.add(m);
@@ -163,25 +211,45 @@ public class CartController {
         }
     }
 
-    // Update quantity of a cart item
     @PutMapping("/item/{cartItemId}")
+    @Transactional
     public ResponseEntity<?> updateCartItem(@PathVariable Long cartItemId, @RequestBody Map<String, Object> payload) {
         try {
+            Customer customer = getAuthenticatedCustomer();
+            if (customer == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             Object quantityObj = payload.get("quantity");
-            if (quantityObj == null) return ResponseEntity.badRequest().body(Map.of("error", "quantity is required"));
+            if (quantityObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "quantity is required"));
+            }
             Integer quantity = Integer.parseInt(quantityObj.toString());
             
-            if (quantity <= 0) return ResponseEntity.badRequest().body(Map.of("error", "quantity must be greater than 0"));
+            if (quantity <= 0) {
+                return ResponseEntity.badRequest().body(Map.of("error", "quantity must be greater than 0"));
+            }
             
             Optional<CartItem> itemOpt = cartItemRepository.findById(cartItemId);
-            if (itemOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
+            if (itemOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
+            }
             CartItem item = itemOpt.get();
             
-            // Validate requested quantity against product stock
+            // CRITICAL: Verify this cart item belongs to the authenticated user
+            if (!item.getCart().getCustomer().getId().equals(customer.getId())) {
+                return ResponseEntity.status(403).body(Map.of("error", "Forbidden - This cart item does not belong to you"));
+            }
+            
+            // Validate stock
             Product product = item.getProduct();
             int available = product.getStock() != null ? product.getStock() : 0;
             if (quantity > available) {
-                return ResponseEntity.status(400).body(Map.of("error", "Insufficient stock", "available", available, "requested", quantity));
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Insufficient stock", 
+                    "available", available, 
+                    "requested", quantity
+                ));
             }
 
             item.setQuantity(quantity);
@@ -206,13 +274,26 @@ public class CartController {
         }
     }
 
-    // Delete a cart item
     @DeleteMapping("/item/{cartItemId}")
+    @Transactional
     public ResponseEntity<?> deleteCartItem(@PathVariable Long cartItemId) {
         try {
+            Customer customer = getAuthenticatedCustomer();
+            if (customer == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             Optional<CartItem> itemOpt = cartItemRepository.findById(cartItemId);
-            if (itemOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
+            if (itemOpt.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "Cart item not found"));
+            }
             CartItem item = itemOpt.get();
+            
+            // CRITICAL: Verify ownership
+            if (!item.getCart().getCustomer().getId().equals(customer.getId())) {
+                return ResponseEntity.status(403).body(Map.of("error", "Forbidden - This cart item does not belong to you"));
+            }
+            
             cartItemRepository.delete(item);
             return ResponseEntity.ok(Map.of("message", "Cart item deleted successfully"));
         } catch (Exception e) {
@@ -221,15 +302,15 @@ public class CartController {
         }
     }
 
-    // Clear entire cart for a user
-    @DeleteMapping("/{userId}/clear")
-    public ResponseEntity<?> clearCart(@PathVariable Long userId) {
+    @DeleteMapping("/clear")
+    @Transactional
+    public ResponseEntity<?> clearCart() {
         try {
-            Optional<User> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = userOpt.get();
-            if (user.getCustomer() == null) return ResponseEntity.status(400).body(Map.of("error", "User is not a customer"));
-            Customer customer = user.getCustomer();
+            Customer customer = getAuthenticatedCustomer();
+            if (customer == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             Optional<Cart> cartOpt = cartRepository.findByCustomer(customer);
             if (cartOpt.isPresent()) {
                 Cart cart = cartOpt.get();
@@ -243,29 +324,27 @@ public class CartController {
         }
     }
 
-    // Checkout: Create order from cart
     @PostMapping("/checkout")
     @Transactional
     public ResponseEntity<?> checkout(@RequestBody Map<String, Object> payload) {
         try {
-            Object userIdObj = payload.get("userId");
-            String paymentMethod = (String) payload.get("paymentMethod"); // "ONLINE" or "COD" (cash on delivery)
+            // Get authenticated user instead of trusting request
+            Customer customer = getAuthenticatedCustomer();
+            if (customer == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
+            String paymentMethod = (String) payload.get("paymentMethod");
             String shippingAddress = (String) payload.get("shippingAddress");
             Object totalObj = payload.get("totalAmount");
 
-            if (userIdObj == null || paymentMethod == null || shippingAddress == null || totalObj == null) {
-                return ResponseEntity.badRequest().body(Map.of("error", "userId, paymentMethod, shippingAddress, and totalAmount are required"));
+            if (paymentMethod == null || shippingAddress == null || totalObj == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "paymentMethod, shippingAddress, and totalAmount are required"
+                ));
             }
 
-            Long userId = Long.parseLong(userIdObj.toString());
             BigDecimal totalAmount = new BigDecimal(totalObj.toString());
-
-            Optional<User> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = userOpt.get();
-
-            if (user.getCustomer() == null) return ResponseEntity.status(400).body(Map.of("error", "User is not a customer"));
-            Customer customer = user.getCustomer();
 
             Optional<Cart> cartOpt = cartRepository.findByCustomer(customer);
             if (cartOpt.isEmpty() || cartOpt.get().getCartItems().isEmpty()) {
@@ -274,24 +353,46 @@ public class CartController {
 
             Cart cart = cartOpt.get();
 
-            // Verify stock for each cart item and decrement stock atomically
+            // Calculate actual total from cart to prevent manipulation
+            BigDecimal calculatedTotal = BigDecimal.ZERO;
+            for (CartItem cartItem : cart.getCartItems()) {
+                BigDecimal itemTotal = cartItem.getProduct().getPrice()
+                    .multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+                calculatedTotal = calculatedTotal.add(itemTotal);
+            }
+
+            // Verify the total matches (with small tolerance for rounding)
+            if (calculatedTotal.subtract(totalAmount).abs().compareTo(new BigDecimal("0.01")) > 0) {
+                return ResponseEntity.status(400).body(Map.of(
+                    "error", "Total amount mismatch",
+                    "calculated", calculatedTotal,
+                    "provided", totalAmount
+                ));
+            }
+
+            // Verify stock for each cart item
             for (CartItem cartItem : cart.getCartItems()) {
                 Product prod = cartItem.getProduct();
                 Integer stock = prod.getStock() != null ? prod.getStock() : 0;
                 if (cartItem.getQuantity() > stock) {
-                    return ResponseEntity.status(400).body(Map.of("error", "Insufficient stock for product", "product_id", prod.getId(), "available", stock, "requested", cartItem.getQuantity()));
+                    return ResponseEntity.status(400).body(Map.of(
+                        "error", "Insufficient stock for product",
+                        "product_id", prod.getId(),
+                        "product_name", prod.getName(),
+                        "available", stock,
+                        "requested", cartItem.getQuantity()
+                    ));
                 }
             }
 
             // Create order
-            Order order = new Order(customer, totalAmount, shippingAddress, paymentMethod);
-            // Set billing status to PAID for ONLINE or LAZZAPPEEPAY
+            Order order = new Order(customer, calculatedTotal, shippingAddress, paymentMethod);
             if ("ONLINE".equals(paymentMethod) || "LAZZAPPEEPAY".equals(paymentMethod)) {
                 order.setBillingStatus("PAID");
             }
             orderRepository.save(order);
 
-            // Transfer cart items to order items and decrement product stock
+            // Transfer cart items to order items and decrement stock
             for (CartItem cartItem : cart.getCartItems()) {
                 Product prod = cartItem.getProduct();
 
@@ -303,7 +404,7 @@ public class CartController {
                 orderItem.calculateSubtotal();
                 order.getOrderItems().add(orderItem);
 
-                // decrement stock
+                // Decrement stock
                 int remaining = (prod.getStock() != null ? prod.getStock() : 0) - cartItem.getQuantity();
                 prod.setStock(Math.max(0, remaining));
                 productRepository.save(prod);
@@ -315,7 +416,6 @@ public class CartController {
             cartItemRepository.deleteAll(cart.getCartItems());
             cartRepository.delete(cart);
 
-            // Build response
             Map<String, Object> res = new HashMap<>();
             res.put("message", "Order placed successfully");
             res.put("order_id", order.getId());
@@ -331,4 +431,3 @@ public class CartController {
         }
     }
 }
-
