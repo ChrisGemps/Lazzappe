@@ -27,15 +27,18 @@ export default function CustomerOrders() {
       navigate('/login');
       return;
     }
-    
+
     try {
       const user = JSON.parse(userStr);
+      const token = localStorage.getItem('token'); // <-- read from localStorage
       const userId = user.id || user.user_id;
 
       const response = await fetch('http://localhost:8080/api/auth/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: String(userId) })
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
@@ -57,6 +60,8 @@ export default function CustomerOrders() {
       navigate('/dashboard');
     }
   };
+
+
 
   const fetchOrders = async (customerId) => {
     try {

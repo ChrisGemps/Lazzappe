@@ -32,36 +32,30 @@ export default function SellerDashboard() {
       navigate('/login');
       return;
     }
-    
+
     try {
       const user = JSON.parse(userStr);
-      const userId = user.id || user.user_id;
-
-      // Fetch fresh profile data to get current role
+      const token = localStorage.getItem('token'); // Make sure you store JWT on login
       const response = await fetch('http://localhost:8080/api/auth/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: String(userId) })
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
         const profileData = await response.json();
         setUserRole(profileData.role);
+        if (profileData.seller_id) setSellerId(profileData.seller_id);
 
-        // store seller id if available
-        if (profileData.seller_id) {
-          setSellerId(profileData.seller_id);
-        }
-
-        // Only SELLER role can access this page
         if (profileData.role !== 'SELLER') {
-          alert('Access denied. Only sellers can access this page. Please switch to Seller role in your profile.');
+          alert('Access denied. Only sellers can access this page.');
           navigate('/profile');
           return;
         }
 
-        // User has seller access, fetch products using seller entity id when available
-        const idToUse = profileData.seller_id || userId;
+        const idToUse = profileData.seller_id || user.id;
         fetchProducts(idToUse);
       } else {
         throw new Error('Failed to verify user role');

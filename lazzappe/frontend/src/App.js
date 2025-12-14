@@ -14,19 +14,20 @@ import CustomerOrders from "./page/CustomerOrder";
 
 function App() {
   useEffect(() => {
-    // On app mount, refresh the user's current role from the server
-    // This ensures that after a page reload, we have the latest role state
     const user = localStorage.getItem('user');
     if (user) {
       try {
         const parsedUser = JSON.parse(user);
-        const userId = parsedUser?.user_id || parsedUser?.id || parsedUser?.userId;
-        if (!userId) return;
+        const token = parsedUser?.token; // your JWT
+
+        if (!token) return; // no token, cannot fetch profile
 
         fetch('http://localhost:8080/api/auth/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: String(userId) })
+          method: 'GET',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
         })
           .then(res => {
             if (!res.ok) throw new Error('Failed to fetch profile');
@@ -34,7 +35,6 @@ function App() {
           })
           .then(data => {
             if (data && data.user_id) {
-              // Update localStorage with the current role from server
               const updatedUser = {
                 ...parsedUser,
                 role: data.role,
@@ -43,19 +43,20 @@ function App() {
                 isCustomer: !!data.isCustomer
               };
               localStorage.setItem('user', JSON.stringify(updatedUser));
-              // Notify other components about the role refresh
-              try { window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: data.username || parsedUser.username })); } catch (e) {}
+
+              window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { 
+                detail: data.username || parsedUser.username 
+              }));
             }
           })
-          .catch(err => {
-            // If profile fetch fails, just use localStorage value
-            console.error('Error refreshing user profile:', err);
-          });
+          .catch(err => console.error('Error refreshing user profile:', err));
       } catch (e) {
         console.error('Error parsing user from localStorage:', e);
       }
     }
   }, []);
+
+
 
   return (
     <BrowserRouter>

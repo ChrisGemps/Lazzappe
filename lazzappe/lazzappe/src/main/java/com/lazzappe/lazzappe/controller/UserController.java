@@ -6,11 +6,16 @@ import com.lazzappe.lazzappe.entity.User;
 import com.lazzappe.lazzappe.repository.CustomerRepository;
 import com.lazzappe.lazzappe.repository.SellerRepository;
 import com.lazzappe.lazzappe.repository.UserRepository;
+import com.lazzappe.lazzappe.security.JwtUtil;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Optional;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -18,7 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000") // allow your React app
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     @Autowired
@@ -30,18 +35,33 @@ public class UserController {
     @Autowired
     private SellerRepository sellerRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    /**
+     * Helper method to get the authenticated user from Spring Security context
+     */
+    private User getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
+        
+        String username = auth.getName();
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        return userOpt.orElse(null);
+    }
+
     // ---------------- REGISTER ----------------
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody Map<String, Object> payload) {
         try {
-            // Extract common fields
             String username = (String) payload.get("username");
             String email = (String) payload.get("email");
             String password = (String) payload.get("password");
             String phoneNumber = (String) payload.getOrDefault("phone_number", null);
             String shippingAddress = (String) payload.get("shipping_address");
             String billingAddress = (String) payload.getOrDefault("billing_address", shippingAddress);
-            // Support multiple payload key styles from the frontend (snake_case or camelCase)
             Object raObj = payload.getOrDefault("register_as_seller", payload.get("registerAsSeller"));
             Boolean registerAsSeller = false;
             if (raObj instanceof Boolean) {
@@ -50,7 +70,6 @@ public class UserController {
                 registerAsSeller = Boolean.parseBoolean((String) raObj);
             }
 
-            // Check for existing username/email
             if (userRepository.existsByUsername(username)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username already exists"));
             }
@@ -58,27 +77,22 @@ public class UserController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email already registered"));
             }
 
-            // Create User entity
             User user = new User();
             user.setUsername(username);
             user.setEmail(email);
             user.setPassword(password); // TODO: Encode password with BCryptPasswordEncoder
             user.setPhone_number(phoneNumber);
-            // Set default role based on registration type
             user.setCurrentRole(registerAsSeller ? "SELLER" : "CUSTOMER");
 
             userRepository.save(user);
 
-            // Create Customer entity and link both sides
             Customer customer = new Customer();
             customer.setUser(user);
             customer.setShippingAddress(shippingAddress);
             customer.setBillingAddress(billingAddress);
             customerRepository.save(customer);
-            // ensure user has reference to customer so future loads reflect relation
             user.setCustomer(customer);
 
-            // If registering as seller, create Seller entity and link both sides
             Seller seller = null;
             if (registerAsSeller) {
                 String storeName = (String) payload.get("store_name");
@@ -92,11 +106,9 @@ public class UserController {
                 seller.setBusinessLicense(businessLicense);
 
                 sellerRepository.save(seller);
-                // set back-reference on user
                 user.setSeller(seller);
             }
 
-            // Persist user again so `currentRole` and associations are stored on the user side
             userRepository.save(user);
 
             Map<String, String> response = new HashMap<>();
@@ -120,26 +132,28 @@ public class UserController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username/email and password are required"));
             }
 
-            User user;
+            Optional<User> userOpt;
 
-            // Check if input contains '@' → treat as email
             if (usernameOrEmail.contains("@")) {
-                user = userRepository.findByEmail(usernameOrEmail);
+                userOpt = userRepository.findByEmail(usernameOrEmail);
             } else {
-                user = userRepository.findByUsername(usernameOrEmail);
+                userOpt = userRepository.findByUsername(usernameOrEmail);
             }
 
-            if (user == null) {
+            if (userOpt.isEmpty()) {
                 return ResponseEntity.status(401).body(Map.of("error", "User not found"));
             }
 
-            // Check password (plain text for now; ideally use BCrypt)
+            User user = userOpt.get();
+
             if (!user.getPassword().equals(password)) {
                 return ResponseEntity.status(401).body(Map.of("error", "Invalid password"));
             }
 
-            // Prepare response (use currentRole if present, otherwise infer from linked entities)
+            String token = jwtUtil.generateToken(user.getUsername());
+
             Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
             response.put("user_id", user.getUser_id());
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
@@ -162,15 +176,13 @@ public class UserController {
     }
 
     // ---------------- PROFILE ----------------
-    @PostMapping("/profile")
-    public ResponseEntity<?> getProfile(@RequestBody Map<String, Object> payload) {
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile() {
         try {
-            Object idObj = payload.get("userId");
-            if (idObj == null) return ResponseEntity.badRequest().body(Map.of("error", "userId is required"));
-            Long id = Long.parseLong(idObj.toString());
-            var optional = userRepository.findById(id);
-            if (optional.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = optional.get();
+            User user = getAuthenticatedUser();
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("user_id", user.getUser_id());
@@ -200,17 +212,14 @@ public class UserController {
     }
 
     // ---------------- UPDATE PROFILE ----------------
-    @PostMapping("/update-profile")
+    @PutMapping("/profile")
     public ResponseEntity<?> updateProfile(@RequestBody Map<String, Object> payload) {
         try {
-            Object idObj = payload.get("userId");
-            if (idObj == null) return ResponseEntity.badRequest().body(Map.of("error", "userId is required"));
-            Long id = Long.parseLong(idObj.toString());
-            var optional = userRepository.findById(id);
-            if (optional.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = optional.get();
+            User user = getAuthenticatedUser();
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
 
-            // update fields if provided
             String username = (String) payload.getOrDefault("username", user.getUsername());
             String email = (String) payload.getOrDefault("email", user.getEmail());
             String phone = (String) payload.getOrDefault("phone_number", user.getPhone_number());
@@ -218,7 +227,6 @@ public class UserController {
             user.setEmail(email);
             user.setPhone_number(phone);
 
-            // customer fields
             if (user.getCustomer() == null) {
                 Customer customer = new Customer();
                 customer.setUser(user);
@@ -229,7 +237,6 @@ public class UserController {
             user.getCustomer().setShippingAddress(shipping);
             user.getCustomer().setBillingAddress(billing);
 
-            // seller fields
             if (payload.containsKey("store_name") || payload.containsKey("store_description") || payload.containsKey("business_license")) {
                 if (user.getSeller() == null) {
                     Seller seller = new Seller();
@@ -245,6 +252,7 @@ public class UserController {
             }
 
             userRepository.save(user);
+            
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Profile updated");
             response.put("username", user.getUsername());
@@ -262,18 +270,25 @@ public class UserController {
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody Map<String, Object> payload) {
         try {
-            Object idObj = payload.get("userId");
+            User user = getAuthenticatedUser();
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             String currentPassword = (String) payload.get("currentPassword");
             String newPassword = (String) payload.get("newPassword");
-            if (idObj == null || currentPassword == null || newPassword == null) return ResponseEntity.badRequest().body(Map.of("error", "userId, currentPassword, and newPassword are required"));
+            
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "currentPassword and newPassword are required"));
+            }
 
-            Long id = Long.parseLong(idObj.toString());
-            var optional = userRepository.findById(id);
-            if (optional.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = optional.get();
-            if (!user.getPassword().equals(currentPassword)) return ResponseEntity.status(401).body(Map.of("error", "Current password is incorrect"));
+            if (!user.getPassword().equals(currentPassword)) {
+                return ResponseEntity.status(401).body(Map.of("error", "Current password is incorrect"));
+            }
+            
             user.setPassword(newPassword);
             userRepository.save(user);
+            
             return ResponseEntity.ok(Map.of("message", "Password changed"));
         } catch (Exception e) {
             e.printStackTrace();
@@ -286,70 +301,56 @@ public class UserController {
     @Transactional
     public ResponseEntity<?> switchRole(@RequestBody Map<String, Object> payload) {
         try {
-            Object idObj = payload.get("userId");
+            User user = getAuthenticatedUser();
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             String role = (String) payload.get("role");
-            if (idObj == null || role == null) return ResponseEntity.badRequest().body(Map.of("error", "userId and role are required"));
-            Long id = Long.parseLong(idObj.toString());
-            System.out.println("[SWITCH-ROLE] Starting: userId=" + id + ", requestedRole=" + role);
-            
-            var optional = userRepository.findById(id);
-            if (optional.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            User user = optional.get();
+            if (role == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "role is required"));
+            }
+
+            System.out.println("[SWITCH-ROLE] Starting: userId=" + user.getUser_id() + ", requestedRole=" + role);
             System.out.println("[SWITCH-ROLE] Current state: isSeller=" + (user.getSeller() != null) + ", isCustomer=" + (user.getCustomer() != null));
 
             if ("SELLER".equalsIgnoreCase(role)) {
-                // Check if user already has a seller entity (even if disconnected)
-                    if (user.getSeller() == null) {
-                        // Try to find an existing seller record for this user using native query
-                        Seller existingSeller = sellerRepository.findByUserIdNative(id);
-                        if (existingSeller != null) {
-                            // Reuse the existing seller by updating its user reference
-                            existingSeller.setUser(user);
-                            sellerRepository.save(existingSeller);
-                            user.setSeller(existingSeller);
-                        } else {
-                            // Create a new seller only if one doesn't exist
-                            Seller seller = new Seller();
-                            seller.setUser(user);
-                            seller.setStoreName((String) payload.getOrDefault("store_name", user.getUsername() + "'s Store"));
-                            seller.setStoreDescription((String) payload.getOrDefault("store_description", ""));
-                            seller.setBusinessLicense((String) payload.getOrDefault("business_license", null));
-                            sellerRepository.save(seller);
-                            user.setSeller(seller);
-                        }
+                if (user.getSeller() == null) {
+                    Seller existingSeller = sellerRepository.findByUserIdNative(user.getUser_id());
+                    if (existingSeller != null) {
+                        existingSeller.setUser(user);
+                        sellerRepository.save(existingSeller);
+                        user.setSeller(existingSeller);
+                    } else {
+                        Seller seller = new Seller();
+                        seller.setUser(user);
+                        seller.setStoreName((String) payload.getOrDefault("store_name", user.getUsername() + "'s Store"));
+                        seller.setStoreDescription((String) payload.getOrDefault("store_description", ""));
+                        seller.setBusinessLicense((String) payload.getOrDefault("business_license", null));
+                        sellerRepository.save(seller);
+                        user.setSeller(seller);
                     }
+                }
             } else if ("CUSTOMER".equalsIgnoreCase(role)) {
-                // Disconnect the seller from user without deleting it or its products
-                // This allows users to switch back to seller and keep their products
-                // We just clear the user reference in Java, but keep the database foreign key intact
-                // so we can find and reconnect to the same seller later
                 if (user.getSeller() != null) {
-                    // Do not delete or nullify the Seller DB record; just clear the user's in-memory reference
-                    // This preserves the seller row (and its seller_id) so it can be reused when switching back
                     user.setSeller(null);
-                    System.out.println("[DEBUG] Cleared user->seller reference for user " + id + " (seller kept in DB)");
+                    System.out.println("[DEBUG] Cleared user->seller reference for user " + user.getUser_id());
                 }
                 
-                // Ensure customer entity exists
                 if (user.getCustomer() == null) {
                     Customer customer = new Customer();
                     customer.setUser(user);
                     customerRepository.save(customer);
                     user.setCustomer(customer);
-                    System.out.println("[DEBUG] Created customer entity for user " + id);
+                    System.out.println("[DEBUG] Created customer entity for user " + user.getUser_id());
                 }
             }
             
-            // Set the user's current active role so profile checks are authoritative
             user.setCurrentRole(role.toUpperCase());
-            // Save user changes
             userRepository.save(user);
-            
-            // Flush and reload to ensure we have fresh data from DB
             userRepository.flush();
-            user = userRepository.findById(id).orElse(user);
+            user = userRepository.findById(user.getUser_id()).orElse(user);
             
-            // Build complete response with updated profile data
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Role switched");
             response.put("user_id", user.getUser_id());
@@ -361,7 +362,6 @@ public class UserController {
             String finalRole = (user.getCurrentRole() != null) ? user.getCurrentRole() : (user.getSeller() != null ? "SELLER" : "CUSTOMER");
             response.put("role", finalRole);
             
-            // Include seller info if user is now a seller
             if (user.getSeller() != null) {
                 response.put("seller_id", user.getSeller().getId());
                 response.put("store_name", user.getSeller().getStoreName());
@@ -369,7 +369,6 @@ public class UserController {
                 response.put("business_license", user.getSeller().getBusinessLicense());
             }
             
-            // Include customer info
             if (user.getCustomer() != null) {
                 response.put("shipping_address", user.getCustomer().getShippingAddress());
                 response.put("billing_address", user.getCustomer().getBillingAddress());
@@ -386,27 +385,20 @@ public class UserController {
 
     // ---------------- UPLOAD PHOTO ----------------
     @PostMapping("/upload-photo")
-    public ResponseEntity<?> uploadPhoto(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("userId") String userId) {
+    public ResponseEntity<?> uploadPhoto(@RequestParam("file") MultipartFile file) {
         try {
+            User user = getAuthenticatedUser();
+            if (user == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized - Please login"));
+            }
+
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "File is empty"));
             }
 
-            Long id = Long.parseLong(userId);
-            var optional = userRepository.findById(id);
-            if (optional.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            }
-
-            User user = optional.get();
-
-            // Convert file to base64
             String base64Photo = Base64.getEncoder().encodeToString(file.getBytes());
             String dataUri = "data:" + file.getContentType() + ";base64," + base64Photo;
 
-            // Save to database
             user.setProfilePhoto(dataUri);
             userRepository.save(user);
 
@@ -414,8 +406,6 @@ public class UserController {
             response.put("message", "Photo uploaded successfully");
             response.put("photoUrl", dataUri);
             return ResponseEntity.ok(response);
-        } catch (NumberFormatException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Invalid userId format"));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to upload photo: " + e.getMessage()));

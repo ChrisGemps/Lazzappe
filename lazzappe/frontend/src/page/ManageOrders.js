@@ -34,10 +34,11 @@ export default function ManageOrders() {
       const userId = user.id || user.user_id;
 
       const response = await fetch('http://localhost:8080/api/auth/profile', {
-        method: 'POST',
+        method: 'GET', // GET is standard for fetching data
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: String(userId) })
+        credentials: 'include', // include cookies for session-based auth
       });
+
 
       if (response.ok) {
         const profileData = await response.json();

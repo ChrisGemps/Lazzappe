@@ -45,10 +45,11 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) =>
           if (!userId) return;
 
           const response = await fetch('http://localhost:8080/api/auth/profile', {
-            method: 'POST',
+            method: 'GET',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: String(userId) })
+            credentials: 'include', // include session cookie if you are using session-based auth
           });
+
 
           if (response.ok) {
             const profileData = await response.json();
@@ -107,14 +108,15 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) =>
       const response = await fetch('http://localhost:8080/api/cart/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ensures backend knows who the user is
         body: JSON.stringify({
-          userId: String(userId),
           paymentMethod: paymentMethod,
           shippingAddress: shippingAddress,
           totalAmount: finalTotal.toFixed(2),
           lazzappeeCoinsUsed: coinsToApply.toFixed(2)
         })
       });
+
 
       if (!response.ok) {
         const errorData = await response.json();

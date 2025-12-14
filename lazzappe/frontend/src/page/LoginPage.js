@@ -21,91 +21,91 @@ const LoginForm = () => {
   };
 
   const signinClick = async () => {
-  setError("");
-  if (!form.username || !form.password) {
-    setError("Please fill in all fields");
-    return;
-  }
+    setError("");
+    if (!form.username || !form.password) {
+      setError("Please fill in all fields");
+      return;
+    }
 
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const isEmail = form.username.includes('@');
-    const payload = isEmail
-      ? { email: form.username.trim(), password: form.password }
-      : { username: form.username.trim(), password: form.password };
-
-    console.debug('Login request payload:', payload);
-
-    const response = await fetch("http://localhost:8080/api/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    // Try to parse JSON body when possible, but fall back to text
-    let data = null;
-    let textBody = null;
     try {
-      data = await response.json();
-    } catch (e) {
+      // Send username field regardless of whether it's email or username
+      const payload = {
+        username: form.username.trim(),
+        password: form.password
+      };
+
+      console.debug('Login request payload:', payload);
+
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let data = null;
+      let textBody = null;
       try {
-        textBody = await response.text();
-      } catch (ee) {
-        // ignore
-      }
-    }
-
-    console.debug('Login response status:', response.status, 'jsonBody:', data, 'textBody:', textBody);
-
-    if (!response.ok) {
-      const errMsg = (data && (data.error || data.message)) || textBody || response.statusText || "Login failed";
-      throw new Error(errMsg);
-    }
-
-    // Derive username to store for UI; prefer returned username, otherwise use input
-    const derivedUsername =
-      (data && (data.username || data.user?.username || data.data?.username)) ||
-      (isEmail ? form.username.trim() : form.username.trim());
-
-    // Save user info and username and notify other components
-    try {
-      let userToStore = null;
-      if (data) {
-        // Build a clean object to store in localStorage
-        userToStore = {
-          user_id: data.user_id || data.user?.user_id || null,
-          username: data.username || data.user?.username || derivedUsername,
-          email: data.email || data.user?.email || null,
-          phone_number: data.phone_number || data.user?.phone_number || null,
-          isSeller: data.isSeller === true || data.user?.isSeller === true || false,
-          isCustomer: data.isCustomer === true || data.user?.isCustomer === true || false,
-          role: data.role || data.user?.role || (data.isSeller ? 'SELLER' : 'CUSTOMER'),
-          seller_id: data.seller_id || data.user?.seller_id || null
-        };
-
-        localStorage.setItem("user", JSON.stringify(userToStore));
+        data = await response.json();
+      } catch (e) {
+        try {
+          textBody = await response.text();
+        } catch (ee) {
+          // ignore
+        }
       }
 
-      // Save username separately for quick UI usage
-      localStorage.setItem('username', derivedUsername || '');
+      console.debug('Login response status:', response.status, 'jsonBody:', data, 'textBody:', textBody);
 
-      // Set temporary flag so NavBar can show the welcome toast after navigation
+      if (!response.ok) {
+        const errMsg = (data && (data.error || data.message)) || textBody || response.statusText || "Login failed";
+        throw new Error(errMsg);
+      }
+
+      // Save JWT token - CRITICAL FOR AUTHENTICATION
+      if (data && data.token) {
+        localStorage.setItem('token', data.token);
+        console.log('JWT token saved to localStorage');
+      } else {
+        console.warn('No token received from server');
+      }
+
+      // Build user object from response
+      const userToStore = {
+        user_id: data.user_id || null,
+        username: data.username || form.username.trim(),
+        email: data.email || null,
+        phone_number: data.phone_number || null,
+        profilePhoto: data.profilePhoto || null,
+        isSeller: data.isSeller === true,
+        isCustomer: data.isCustomer === true,
+        role: data.role || (data.isSeller ? 'SELLER' : 'CUSTOMER'),
+        seller_id: data.seller_id || null
+      };
+
+      localStorage.setItem("user", JSON.stringify(userToStore));
+      localStorage.setItem('username', userToStore.username);
       localStorage.setItem('justLoggedIn', 'true');
 
-      // notify other tabs and components about login
-      window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: derivedUsername }));
+      // Notify other tabs and components about login
+      window.dispatchEvent(new CustomEvent('lazzappe:username-changed', { detail: userToStore.username }));
 
       // After login, switch role to SELLER then back to CUSTOMER to initialize seller profile
-      if (userToStore) {
+      if (userToStore.user_id) {
         try {
-          // Switch to SELLER
+          const token = localStorage.getItem('token');
+          
+          // Switch to SELLER - userId removed, backend gets user from JWT token
           const switchToSellerResponse = await fetch("http://localhost:8080/api/auth/switch-role", {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: String(userToStore.user_id), role: 'SELLER' })
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ role: 'SELLER' })
           });
           if (switchToSellerResponse.ok) {
             const switchData = await switchToSellerResponse.json();
@@ -114,11 +114,14 @@ const LoginForm = () => {
             localStorage.setItem("user", JSON.stringify(userToStore));
           }
 
-          // Switch back to CUSTOMER
+          // Switch back to CUSTOMER - userId removed, backend gets user from JWT token
           const switchToCustomerResponse = await fetch("http://localhost:8080/api/auth/switch-role", {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: String(userToStore.user_id), role: 'CUSTOMER' })
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ role: 'CUSTOMER' })
           });
           if (switchToCustomerResponse.ok) {
             const switchBackData = await switchToCustomerResponse.json();
@@ -130,21 +133,17 @@ const LoginForm = () => {
           console.warn('Failed to initialize roles after login:', e);
         }
       }
-    } catch (e) {
-      console.warn('Unable to persist user to localStorage', e);
+
+      // Navigate to dashboard
+      navigate("/dashboard");
+    } catch (error) {
+      const errorMessage = error.message || "Login failed. Please try again.";
+      setError(errorMessage);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-    // Navigate to dashboard
-    navigate("/dashboard");
-  } catch (error) {
-    const errorMessage = error.message || "Login failed. Please try again.";
-    setError(errorMessage);
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
@@ -164,7 +163,7 @@ const LoginForm = () => {
 
       <Input
         type="text"
-        placeholder="Username"
+        placeholder="Username or Email"
         name="username"
         value={form.username}
         onChange={handleChange}
@@ -187,10 +186,10 @@ const LoginForm = () => {
         disabled={loading}
       />
 
-      <div class="divider-container">
-        <div class="divider-line"></div>
-        <span class="divider-text">or Sign In with</span>
-        <div class="divider-line"></div>
+      <div className="divider-container">
+        <div className="divider-line"></div>
+        <span className="divider-text">or Sign In with</span>
+        <div className="divider-line"></div>
       </div>
 
       <div className="social-buttons-container">
