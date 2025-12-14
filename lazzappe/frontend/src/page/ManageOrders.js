@@ -92,7 +92,8 @@ export default function ManageOrders() {
 
   const filterOrders = () => {
     if (statusFilter === 'ALL') {
-      setFilteredOrders(orders);
+      // Show only active orders (exclude delivered)
+      setFilteredOrders(orders.filter(order => order.status !== 'DELIVERED'));
     } else {
       setFilteredOrders(orders.filter(order => order.status === statusFilter));
     }
@@ -119,6 +120,28 @@ export default function ManageOrders() {
         const userStr = localStorage.getItem('user');
         const user = JSON.parse(userStr);
         const userId = user.id || user.user_id;
+        // If marking delivered and payment was via LAZZAPPEEPAY, credit seller's LazzappeeCoins
+        if (newStatus === 'DELIVERED') {
+          try {
+            // find the order object (may be in selectedOrder or orders list)
+            const order = orders.find(o => o.order_id === orderId) || selectedOrder;
+            const pm = (order?.payment_method || order?.paymentMethod || '').toString().toUpperCase();
+            if (pm.includes('LAZZAPPEEPAY') || pm.includes('LAZZAPPEE')) {
+              const sellerAmount = parseFloat(calculateTotal(order.items || order.orderItems)) || 0;
+              const uStr = localStorage.getItem('user');
+              const uObj = uStr ? JSON.parse(uStr) : null;
+              const uid = uObj?.user_id || uObj?.id || uObj?.userId;
+              const key = uid ? `lazzappee_wallet_${uid}` : 'lazzappee_wallet';
+              const prev = parseFloat(localStorage.getItem(key) || '0');
+              const newBalance = Math.max(0, prev + sellerAmount);
+              localStorage.setItem(key, newBalance.toFixed(2));
+              try { window.dispatchEvent(new CustomEvent('lazzappe:wallet-updated', { detail: { balance: newBalance, userId: uid } })); } catch (e) {}
+              alert(`LazzappeeCoins credited: ₱${sellerAmount.toFixed(2)} (New balance: ₱${newBalance.toFixed(2)})`);
+            }
+          } catch (err) {
+            console.warn('Failed to credit seller wallet:', err);
+          }
+        }
         fetchOrders(userId);
         setShowModal(false);
       } else {
@@ -292,8 +315,9 @@ export default function ManageOrders() {
               className={`filter-tab ${statusFilter === 'ALL' ? 'active' : ''}`}
               onClick={() => setStatusFilter('ALL')}
             >
-              All Orders
+              All Active Orders
             </button>
+            
             <button
               className={`filter-tab ${statusFilter === 'PENDING' ? 'active' : ''}`}
               onClick={() => setStatusFilter('PENDING')}
