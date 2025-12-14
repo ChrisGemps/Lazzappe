@@ -309,6 +309,7 @@ const CartPage = () => {
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
         totalAmount={grandTotal}
+        cartSubtotal={subtotal}
         onCheckout={handleCheckout}
         clearCart={clearCart}
       />

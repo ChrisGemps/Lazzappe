@@ -97,17 +97,38 @@ export default function ProfilePage() {
 
   // Load wallet balance from localStorage and listen for updates
   useEffect(() => {
+    const getWalletKey = () => {
+      try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return null;
+        const user = JSON.parse(userStr);
+        const uid = user?.user_id || user?.id || user?.userId;
+        if (!uid) return null;
+        return `lazzappee_wallet_${uid}`;
+      } catch (e) { return null; }
+    };
+
     const readWallet = () => {
-      const val = parseFloat(localStorage.getItem('lazzappee_wallet') || '0');
+      const key = getWalletKey();
+      if (!key) { setWalletBalance(0); return; }
+      const val = parseFloat(localStorage.getItem(key) || '0');
       setWalletBalance(Number.isFinite(val) ? val : 0);
     };
 
     readWallet();
 
-    const storageHandler = (e) => {
-      if (e.key === 'lazzappee_wallet') readWallet();
+    const storageHandler = (e) => { readWallet(); };
+    const customHandler = (e) => { 
+      // if event provides balance detail and it's for this user, use it
+      if (e?.detail && typeof e.detail.balance !== 'undefined') {
+        const key = getWalletKey();
+        if (!key) { readWallet(); return; }
+        // detail may include new balance; just re-read to be safe
+        readWallet();
+        return;
+      }
+      readWallet();
     };
-    const customHandler = (e) => { readWallet(); };
 
     window.addEventListener('storage', storageHandler);
     window.addEventListener('lazzappe:wallet-updated', customHandler);

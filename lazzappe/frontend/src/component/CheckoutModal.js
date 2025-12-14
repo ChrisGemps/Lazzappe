@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../css/Dashboard/CheckoutModal.css';
 
-const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) => {
+const CheckoutModal = ({ open, onClose, totalAmount, cartSubtotal, onCheckout, clearCart }) => {
   const [paymentMethod, setPaymentMethod] = useState('COD'); // COD or ONLINE
   const [shippingAddress, setShippingAddress] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,17 +20,29 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) =>
       // reset paid amount when modal opens
       setPaidAmount(null);
       // load wallet balance from localStorage when modal opens
-      try {
-        const w = parseFloat(localStorage.getItem('lazzappee_wallet')) || 0;
-        setWalletBalance(w);
-      } catch (err) {
-        setWalletBalance(0);
-      }
+      const getWalletKey = () => {
+        try {
+          const userStr = localStorage.getItem('user');
+          if (!userStr) return null;
+          const user = JSON.parse(userStr);
+          const uid = user?.user_id || user?.id || user?.userId;
+          return uid ? `lazzappee_wallet_${uid}` : null;
+        } catch (e) { return null; }
+      };
+
+      const readWallet = () => {
+        try {
+          const key = getWalletKey();
+          if (!key) { setWalletBalance(0); return; }
+          setWalletBalance(parseFloat(localStorage.getItem(key)) || 0);
+        } catch (err) { setWalletBalance(0); }
+      };
+
+      // initial read
+      readWallet();
 
       // listener to update wallet balance if changed elsewhere
-      const onWalletUpdated = () => {
-        try { setWalletBalance(parseFloat(localStorage.getItem('lazzappee_wallet')) || 0); } catch (e) { setWalletBalance(0); }
-      };
+      const onWalletUpdated = (e) => { readWallet(); };
       window.addEventListener('lazzappe:wallet-updated', onWalletUpdated);
       window.addEventListener('storage', onWalletUpdated);
 
@@ -44,9 +56,13 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) =>
           
           if (!userId) return;
 
+          const token = localStorage.getItem('token');
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+
           const response = await fetch('http://localhost:8080/api/auth/profile', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             credentials: 'include', // include session cookie if you are using session-based auth
           });
 
@@ -99,42 +115,53 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) =>
       }
 
       const discountRate = paymentMethod === 'LAZZAPPEEPAY' ? LAZZAPPEEPAY_DISCOUNT : 0;
+      // Discounts/coins apply to the displayed order total (includes tax/shipping/vouchers)
       const discounted = Math.max(0, totalAmount * (1 - discountRate));
 
       // determine coins to apply (for LAZZAPPEEPAY we auto-apply coins)
       const coinsToApply = paymentMethod === 'LAZZAPPEEPAY' ? Math.min(walletBalance, discounted) : (useWallet ? Math.min(walletBalance, discounted) : 0);
       const finalTotal = Math.max(0, discounted - coinsToApply);
 
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch('http://localhost:8080/api/cart/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include', // ensures backend knows who the user is
         body: JSON.stringify({
           paymentMethod: paymentMethod,
           shippingAddress: shippingAddress,
-          totalAmount: finalTotal.toFixed(2),
-          lazzappeeCoinsUsed: coinsToApply.toFixed(2)
+          // IMPORTANT: backend validates `totalAmount` against cart contents (product subtotal).
+          // Send the original cart subtotal (pre-discount, without tax/shipping) so server validation succeeds.
+          totalAmount: (cartSubtotal !== undefined && cartSubtotal !== null ? cartSubtotal.toFixed(2) : totalAmount.toFixed(2)),
+          // include client-side fields for bookkeeping; server may ignore them
+          lazzappeeCoinsUsed: coinsToApply.toFixed(2),
+          clientFinalAmount: finalTotal.toFixed(2),
+          discountRate: discountRate
         })
       });
 
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Checkout failed');
+        // attempt to read error details
+        let errorMsg = `Checkout failed (status ${response.status})`;
+        try {
+          const errorData = await response.json();
+          if (errorData && (errorData.error || errorData.message)) errorMsg = errorData.error || errorData.message;
+        } catch (e) {
+          // ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
       }
 
       const data = await response.json();
       // prefer server-provided total amount (discounted/final) if returned
-      try {
-        const serverTotal = data?.total_amount || data?.totalAmount || data?.total || data?.paid_amount || data?.paidAmount;
-        if (serverTotal !== undefined && serverTotal !== null && serverTotal !== '') {
-          setPaidAmount(parseFloat(serverTotal).toFixed(2));
-        } else {
-          setPaidAmount(finalTotal.toFixed(2));
-        }
-      } catch (e) {
-        setPaidAmount(finalTotal.toFixed(2));
-      }
+      // Server returns the calculated cart total as `total_amount`. The actual
+      // amount charged to the user may differ due to LAZZAPPEEPAY discount and
+      // applied LazzappeeCoins. Show the client's final paid amount for clarity.
+      setPaidAmount(finalTotal.toFixed(2));
       
       // After successful checkout, deduct stock from seller's products
       // Get cart items from localStorage to see what was ordered
@@ -180,10 +207,14 @@ const CheckoutModal = ({ open, onClose, totalAmount, onCheckout, clearCart }) =>
       // if coins were used, update local wallet immediately and notify other components
       try {
         if (typeof coinsToApply === 'number' && coinsToApply > 0) {
-          const current = parseFloat(localStorage.getItem('lazzappee_wallet')) || 0;
+          const userStr2 = localStorage.getItem('user');
+          const user2 = userStr2 ? JSON.parse(userStr2) : null;
+          const uid2 = user2?.user_id || user2?.id || user2?.userId;
+          const key2 = uid2 ? `lazzappee_wallet_${uid2}` : null;
+          const current = key2 ? (parseFloat(localStorage.getItem(key2)) || 0) : 0;
           const newWallet = Math.max(0, current - coinsToApply);
-          localStorage.setItem('lazzappee_wallet', newWallet.toFixed(2));
-          try { window.dispatchEvent(new CustomEvent('lazzappe:wallet-updated')); } catch (err) {}
+          if (key2) localStorage.setItem(key2, newWallet.toFixed(2));
+          try { window.dispatchEvent(new CustomEvent('lazzappe:wallet-updated', { detail: { balance: newWallet, userId: uid2 } })); } catch (err) {}
           setWalletBalance(newWallet);
         }
       } catch (err) {
