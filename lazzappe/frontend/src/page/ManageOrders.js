@@ -33,9 +33,13 @@ export default function ManageOrders() {
       const user = JSON.parse(userStr);
       const userId = user.id || user.user_id;
 
+      const token = localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch('http://localhost:8080/api/auth/profile', {
         method: 'GET', // GET is standard for fetching data
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include', // include cookies for session-based auth
       });
 
@@ -52,7 +56,13 @@ export default function ManageOrders() {
 
         fetchOrders(userId);
       } else {
-        throw new Error('Failed to verify user role');
+        // try to show server-provided message
+        let msg = 'Failed to verify user role';
+        try {
+          const err = await response.json();
+          if (err && (err.error || err.message)) msg = err.error || err.message;
+        } catch (e) {}
+        throw new Error(msg);
       }
     } catch (error) {
       console.error('Error checking seller access:', error);
