@@ -156,14 +156,14 @@ export default function Products() {
 
                     // If product belongs to the user's seller entity, block it
                     if (productSellerEntityId && currentUserSellerId && Number(productSellerEntityId) === Number(currentUserSellerId)) {
-                      setToast({ show: true, message: 'You cannot add your own product to the cart', type: 'error' });
+                      setToast({ show: true, message: 'You are currently a Seller and cannot add items to cart', type: 'error' });
                       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
                       return;
                     }
 
                     // Fallback: if the product contains a seller.user id, compare with current user id
                     if (currUserId && sellerUserId && Number(currUserId) === Number(sellerUserId)) {
-                      setToast({ show: true, message: 'You cannot add your own product to the cart', type: 'error' });
+                      setToast({ show: true, message: 'You are currently a Seller and cannot add items to cart', type: 'error' });
                       setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 2500);
                       return;
                     }
