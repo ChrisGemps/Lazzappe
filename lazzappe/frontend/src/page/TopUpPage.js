@@ -32,18 +32,28 @@ export default function TopUpPage(){
     const discounted = selected.value * (1 - (selected.discount || 0));
 
     // Persist wallet balance locally (demo): credit the ORIGINAL amount, user only pays the discounted amount.
-    const prev = parseFloat(localStorage.getItem('lazzappee_wallet') || '0');
-    const newBalance = prev + selected.value; // credit full original top-up value
-    localStorage.setItem('lazzappee_wallet', newBalance.toFixed(2));
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      const uid = user?.user_id || user?.id || user?.userId;
+      const key = uid ? `lazzappee_wallet_${uid}` : 'lazzappee_wallet';
+      const prev = parseFloat(localStorage.getItem(key) || '0');
+      const newBalance = prev + selected.value; // credit full original top-up value
+      localStorage.setItem(key, newBalance.toFixed(2));
 
-    setProcessing(false);
-    setMessage(`Success! You paid ₱${discounted.toFixed(2)} and ₱${selected.value.toFixed(2)} was added to your Lazzappee wallet.`);
+      setProcessing(false);
+      setMessage(`Success! You paid ₱${discounted.toFixed(2)} and ₱${selected.value.toFixed(2)} was added to your Lazzappee wallet.`);
 
-    // Dispatch a custom event so other pages can update balances
-    try { window.dispatchEvent(new CustomEvent('lazzappe:wallet-updated', { detail: { balance: newBalance } })); } catch (e) {}
+      // Dispatch a custom event so other pages can update balances (include userId)
+      try { window.dispatchEvent(new CustomEvent('lazzappe:wallet-updated', { detail: { balance: newBalance, userId: uid } })); } catch (e) {}
 
-    // Optionally navigate to profile or dashboard after short delay
-    setTimeout(()=>navigate('/profile'), 1400);
+      // Optionally navigate to profile or dashboard after short delay
+      setTimeout(()=>navigate('/profile'), 1400);
+    } catch (err) {
+      console.error('Top-up error:', err);
+      setProcessing(false);
+      setMessage('Failed to top up. Please try again.');
+    }
   };
 
   return (
