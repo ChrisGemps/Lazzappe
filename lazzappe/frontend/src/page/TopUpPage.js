@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../css/Dashboard/TopUpPage.css';
 import { useNavigate } from 'react-router-dom';
+import NavBarComponent from "../component/Dashboard/NavBarComponent";
 
 export default function TopUpPage(){
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function TopUpPage(){
   const [selected, setSelected] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   const choose = (opt) => {
     setSelected(opt);
@@ -42,13 +45,20 @@ export default function TopUpPage(){
       localStorage.setItem(key, newBalance.toFixed(2));
 
       setProcessing(false);
-      setMessage(`Success! You paid ₱${discounted.toFixed(2)} and ₱${selected.value.toFixed(2)} was added to your Lazzappee wallet.`);
+      const successMsg = `Success! You paid ₱${discounted.toFixed(2)} and ₱${selected.value.toFixed(2)} was added to your Lazzappee wallet.`;
+      setMessage(successMsg);
 
       // Dispatch a custom event so other pages can update balances (include userId)
       try { window.dispatchEvent(new CustomEvent('lazzappe:wallet-updated', { detail: { balance: newBalance, userId: uid } })); } catch (e) {}
 
+      // show confirmation toast with quick actions
+      setConfirmData({ paid: discounted.toFixed(2), credited: selected.value.toFixed(2), newBalance: newBalance.toFixed(2) });
+      setShowConfirm(true);
+      // auto-hide after 4s
+      setTimeout(() => setShowConfirm(false), 4000);
+
       // Optionally navigate to profile or dashboard after short delay
-      setTimeout(()=>navigate('/profile'), 1400);
+      setTimeout(()=>navigate('/profile'), 4000);
     } catch (err) {
       console.error('Top-up error:', err);
       setProcessing(false);
@@ -57,8 +67,10 @@ export default function TopUpPage(){
   };
 
   return (
-    <div className="topup-root">
-      <div className="topup-card">
+    <>
+      <NavBarComponent />
+      <div className="topup-root">
+        <div className="topup-card">
         <h2>Top-up Lazzappee Wallet</h2>
         <p className="muted">Choose an amount to add to your wallet. Discounts applied automatically.</p>
 
@@ -92,11 +104,29 @@ export default function TopUpPage(){
 
         {message && <div className="topup-message">{message}</div>}
 
+        {showConfirm && confirmData && (
+          <div className="topup-toast-wrapper">
+            <div className="topup-toast">
+              <div className="topup-toast-inner">
+                <div className="topup-toast-icon">✓</div>
+                <div>
+                  <div className="topup-toast-title">Top-up Successful</div>
+                  <div className="topup-toast-sub">You paid ₱{confirmData.paid} — ₱{confirmData.credited} added (Balance: ₱{confirmData.newBalance})</div>
+                </div>
+              </div>
+              <div className="topup-toast-actions">
+                <button onClick={() => setShowConfirm(false)} className="toast-btn-close">Close</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="topup-actions">
           <button className="btn-secondary" onClick={() => navigate(-1)}>Back</button>
           <button className="btn-primary" onClick={startTopUp} disabled={processing}>{processing ? 'Processing...' : 'Pay Online'}</button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

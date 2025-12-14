@@ -1,12 +1,12 @@
 .profile-container {
   min-height: 100vh;
   background: linear-gradient(to bottom, #dccff4, #5a36c9);
-  padding: 2rem 1rem;
+  padding: 1rem 1rem;
 }
 
 @media (min-width: 768px) {
   .profile-container {
-    padding: 3rem 2rem;
+    padding: 1rem 1rem;
   }
 }
 
